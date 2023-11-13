@@ -1,10 +1,15 @@
 from gen_vcard import generate_vcard
+import csv
 
 def test_gen_vcard():
     # input_data = [['Acosta', 'Monica', 'Lawyer', 'monic.acost@barnes-stewwart.org', '813.771.3464x71941']]
-    with open('temp', 'r') as file:
+    with open('temp.csv', 'r') as file:
         reader = csv.reader(file)
-    expected_output =("""
+        for i in reader:
+            return i
+        actual_output = generate_vcard(i)
+
+        expected_output =("""
 BEGIN:VCARD
 VERSION:2.1
 Name: Monica;Acosta
@@ -17,6 +22,4 @@ EMAIL;PREF;INTERNET: monic.acost@barnes-stewart.org
 REV:20150922T195243Z
 END:VCARD
 """)
-    actual_output = generate_vcard(reader)
     assert actual_output == expected_output
-
