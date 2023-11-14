@@ -1,5 +1,6 @@
 import csv
 import os
+import requests
 
 def input_data(file):
     data = []
@@ -26,18 +27,31 @@ END:VCARD
 """
 
 def generate_vcards(file):
-    os.mkdir('vcards')
+    if not os.path.exists('vcards'):
+         
+        os.mkdir('vcards')
     for data in file:
         first_name, last_name, title, email, phone_number = data
 
         with open(f'vcards/{first_name}{last_name}.vcf', 'w') as f:
             f.write(vcard_content(data))
-            
+        
+
+def generate_qrcode(data): 
+        for row in data:
+            vcard_list = vcard_content(row)
+            first_name, last_name, title, email, phone_number = row
+
+            qrcode = requests.get(f'https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl={vcard_list}')
+
+            with open(f'vcards/{first_name}{last_name}.qr.png', 'wb') as file:
+                file.write(qrcode.content)
 
 def main():
     file = 'employee.csv'
     data=input_data(file)
     generate_vcards(data)
+    generate_qrcode(data)
 
     print("Visiting cards generated successfully")
 
