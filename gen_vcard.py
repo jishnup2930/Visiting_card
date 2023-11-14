@@ -48,7 +48,7 @@ def generate_qrcode(data):
                 file.write(qrcode.content)
 
 def main():
-    file = 'employee.csv'
+    file = './sample_datas/employee.csv'
     data=input_data(file)
     generate_vcards(data)
     generate_qrcode(data)
