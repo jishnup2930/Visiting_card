@@ -5,7 +5,7 @@ import faker
 def generate_data():
     f = faker.Faker()
     names = []
-    for i in range(40):
+    for i in range(100):
         record = []
         lname = f.last_name()
         fname = f.first_name()
@@ -18,7 +18,7 @@ def generate_data():
     return names
 
 def write_file(name,data):    
-    with open('employee.csv', 'w', newline='') as file: 
+    with open('sample_datas/employee.csv', 'w', newline='') as file: 
         writer = csv.writer(file)
         for row in data:
             writer.writerow(row)
@@ -26,4 +26,4 @@ def write_file(name,data):
 if __name__ == "__main__":
     data = generate_data()
     print(data)    
-    write_file(sys.argv[0], data)
+    write_file(sys.argv[1], data)
