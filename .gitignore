@@ -1,2 +1,4 @@
 __pycache__
-
+gen_sheet.py
+employee.csv
+.coverage
