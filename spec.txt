@@ -3,15 +3,17 @@ Author : Jishnu
 Date : 14/11/2023
 
 1. OBJECTIVE:
-
- Generates visiting cards and QRCODE for a list of employees in the provided  CSV file
+ The input_data function reads the provided csv file.
+ The vcard_content function is the format of each vards we creating.
+ The generate_vcard and generate_qrcode functions generates individual vcard and qr code for each employees in the
+ provided csv file.
 
 2. INPUT:
 
 Command-Line Arguments: csv_file: The path to the CSV file containing contact information.
 Each row in the csv_file should contains the  following columns
 
-        firstname, lastname, dedignation, email, phonenumber
+        firstname, lastname, designation, email, phonenumber
 
 
 3. OUTPUT:
@@ -19,21 +21,24 @@ Each row in the csv_file should contains the  following columns
 The code generate one vCard and QRCODE file for each  row in the csv_file and save the file
 in to a subdirectory called 'vcards'.
 The file name of each vcard is in the format  
+            
             firstnamelastname.vcf
+
 The file name of each qr code is in the format,
+            
             firstnamelastname.qr.png          
 
       * This is a sample vcard file
         
         BEGIN:VCARD
         VERSION:2.1
-        N:Reeves;Anne
-        FN:Anne Reeves
+        N:Bob;John
+        FN:John Bob
         ORG:Authors, Inc.
-        TITLE:Visual merchandiser
+        TITLE:Lawyer
         TEL;WORK;VOICE:666.808.0750x9935
         ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
-        EMAIL;PREF;INTERNET:anne.reeve@davis.com
+        EMAIL;PREF;INTERNET:.johnbob@com
         REV:20150922T195243Z
         END:VCARD
 
@@ -43,6 +48,6 @@ The file name of each qr code is in the format,
 
 The script can be executed from the command line using:
  
-    python3 gen_vcard.py 
+    python3 gen_vcard.py or python gen_vcard.py
 
     
