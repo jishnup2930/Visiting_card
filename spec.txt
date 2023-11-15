@@ -66,9 +66,6 @@ The script can be executed from the command line using:
       -n NUMBER,            Number of vcard to generate [default set to 10]
       -qr --qrcode          To generate QR code only
       -vc --vcard           To generate vacrd only
-      -o, --overwrite       Overwrite directory
-      -d DIMENSION          Change dimension of QRCODE
-      -a ADDRESS,           Change address of the vcard
 
 Example: 
         * python genvcard.py <csv_file> -v -n5
