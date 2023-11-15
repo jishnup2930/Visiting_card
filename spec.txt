@@ -11,7 +11,7 @@ Date : 14/11/2023
 2. INPUT:
 
 Command-Line Arguments: csv_file: The path to the CSV file containing contact information.
-Each row in the csv_file should contains the  following columns
+Each row in the csv_file should contains the  following columns (sample csv file in folder sampledatas)
 
         firstname, lastname, designation, email, phonenumber
 
