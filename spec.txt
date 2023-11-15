@@ -48,6 +48,35 @@ The file name of each qr code is in the format,
 
 The script can be executed from the command line using:
  
-    python3 gen_vcard.py or python gen_vcard.py
+    python3 gen_vcard.py <csvfilename.csv> or python gen_vcard.py <csvfilename.csv>
 
+    * For getting help menu write 
+       
+          python3 gen_vcard <csvfilename.csv> -h
+    
+    example:  
+       Generates sample employee database as csv
+
+       positional arguments:
+        file                Name of input csv file
+
+       options:
+      -h, --help            show this help message and exit
+      -v, --verbose         Print detailed logging
+      -n NUMBER,            Number of vcard to generate [default set to 10]
+      -qr --qrcode          To generate QR code only
+      -vc --vcard           To generate vacrd only
+      -o, --overwrite       Overwrite directory
+      -d DIMENSION          Change dimension of QRCODE
+      -a ADDRESS,           Change address of the vcard
+
+Example: 
+        * python genvcard.py <csv_file> -v -n5
+         Print 5 vcard and qrcode with detailed logging
+             
+        * python genvcard.py <csv_file> -v -qr
+        Print only QR code for default number of employees
+
+        * python genvcard.py <csv_file> -v -vc
+        Print only vcard for default number of employees
     
