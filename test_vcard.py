@@ -1,5 +1,5 @@
 import os
-from gen_vcard import input_data,generate_vcards
+from gen_vcard import input_data,generate_vcards,vcard_content,generate_qrcode
 
 def test_get_data():
     test_file = "/tmp/sample.csv"
@@ -15,7 +15,7 @@ def test_generate_vcards():
     with open('./vcards/JohnBob.vcf', 'r') as f:
         vcard = f.read()
     assert os.path.exists('./vcards/JohnBob.vcf')
-    assert f"""
+    assert """
 BEGIN:VCARD
 VERSION:2.1
 N: Bob;John
@@ -29,3 +29,8 @@ REV:20150922T195243Z
 END:VCARD
 """ in vcard
     os.unlink('./vcards/JohnBob.vcf')
+
+def test_gen_qrcode():
+    data = [['John','Bob','Lawyer','johnbob@example.com','55454616545']]
+    generate_qrcode(data)
+    assert os.path.exists('./vcards/JohnBob.qr.png')
