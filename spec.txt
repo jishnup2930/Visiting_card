@@ -58,22 +58,32 @@ The script can be executed from the command line using:
        Generates sample employee database as csv
 
        positional arguments:
-        file                Name of input csv file
+        ipfile                Name of input csv file
+
 
        options:
       -h, --help            show this help message and exit
       -v, --verbose         Print detailed logging
-      -n NUMBER,            Number of vcard to generate [default set to 10]
-      -qr --qrcode          To generate QR code only
-      -vc --vcard           To generate vacrd only
+      -n   NUMBER           Number of vcard to generate [default set to 10]
+      -q --qrcode           To generate QR code and vcard
+      -s --size             To customise the size of the QR code [default set to 500]
+      -a --address          To give address for the vcard [default address is *america]
 
 Example: 
-        * python genvcard.py <csv_file> -v -n5
-         Print 5 vcard and qrcode with detailed logging
-             
-        * python genvcard.py <csv_file> -v -qr
-        Print only QR code for default number of employees
+        *python gen_vcard.py <csvfile> -v
+         Print detaiiled logging with vcard of default number of employees
 
-        * python genvcard.py <csv_file> -v -vc
-        Print only vcard for default number of employees
+        * python genvcard.py <csvfile> -vn5
+         To generate 5 vcard with detailed logging
+             
+        * python genvcard.py <csvfile> -q
+        To generate QR code and vacrd for default number of employees
+
+        * python genvcard.py <csvfile> -v -vc
+        To generate only vcard for default number of employees
     
+        * python gen_vcard.py <csvfile> -qs200
+        To generate vacrd and qr code, with qr code size 200x200
+
+        * python gen_vcard.py <csvfile> -a calicut
+        To generate vcard with address calicut
