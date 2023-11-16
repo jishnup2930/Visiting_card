@@ -11,8 +11,8 @@ def test_get_data():
     os.unlink(test_file)
 
 def test_vcard_content(): 
-    output = gen_vcard_content('John','Bob','Lawyer','johnbob@example.com','55454616545','100 Flat Grape Dr.;Fresno;CA;95555;United States of America')
-    assert output == """
+    data = gen_vcard_content('John','Bob','Lawyer','johnbob@example.com','55454616545','100 Flat Grape Dr.;Fresno;CA;95555;United States of America')
+    assert data == """
 BEGIN:VCARD
 VERSION:2.1
 N: Bob;John
@@ -25,12 +25,6 @@ EMAIL;PREF;INTERNET: johnbob@example.com
 REV:20150922T195243Z
 END:VCARD
 """
-
-# def test_gen_qrcode():
-#     data = [['John','Bob','Lawyer','johnbob@example.com','55454616545']]
-#     size = 500
-#     gen_qrcode_content(data)
-#     assert os.path.exists('./vcards/JohnBob.qr.png')
 
 def test_gen_qrcode_content():
     size = 500

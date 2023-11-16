@@ -13,8 +13,8 @@ def parse_args():
     parser.add_argument("-v", "--verbose", help="Print detailed logging", action='store_true', default=False)
     parser.add_argument("-n", "--number", help="Number of vcards to generate", action='store', type=int, default=10)
     parser.add_argument("-q","--qrcode", help ="Generate vacrd and QR code ",action ='store_true')
-    parser.add_argument("-s","--size", help ="Size of QR code",action ='store',type=int,default=500)
-    parser.add_argument("-a","--address",help="To give the address in the vcard",action='store',default='100 Flat Grape Dr.;Fresno;CA;95555;United States of America')
+    parser.add_argument("-s","--size", help ="Size of QR code [100-500]",action ='store',type=int,default=500)
+    parser.add_argument("-a","--address",help="To give the address in vcard",action='store',default='100 Flat Grape Dr.;Fresno;CA;95555;United States of America')
     args = parser.parse_args()
     return args
                 
@@ -36,7 +36,7 @@ def parse_data(file):
     with open(file, 'r') as file:
         reader = csv.reader(file)
         for row in reader:
-                data.append(row)
+            data.append(row)
     return data
 
 def gen_vcard_content(first_name, last_name, title, email, phone_number,address):
@@ -71,12 +71,12 @@ def generate_all_vcards(data,number,address):
             break
     logger.info("Vcard generated successfully")
 
-def gen_qrcode_content(vcard,size,address):
+def gen_qrcode_content(vcard,size):
     qrcode = requests.get(f'https://chart.googleapis.com/chart?cht=qr&chs={size}x{size}&chl={vcard}')
     qr = qrcode.content 
     return qr
     
-def generate_all_qrcode(qr,number,size,address): 
+def generate_all_qrcode(qr,number,size): 
     if not os.path.exists('vcards'):   
         os.mkdir('vcards') 
     count = 0
@@ -85,11 +85,11 @@ def generate_all_qrcode(qr,number,size,address):
         first_name, last_name, title, email, phone_number = data
 
         with open(f'vcards/{first_name}{last_name}.qr.png', 'wb') as file:
-            file.write(gen_qrcode_content(data,size,address))
+            file.write(gen_qrcode_content(data,size))
             logger.debug("%d Generated QR code for %s ", count ,first_name)
         if count >=number:
             break
-    logger.info("QR code generated succesfully")
+    logger.info("QR code generated successfully")
 
 def main():
     args = parse_args()
@@ -102,7 +102,7 @@ def main():
     if args.qrcode:
         if args.size:
             generate_all_vcards(data,args.number,args.address)   
-            generate_all_qrcode(data,args.number,args.size,args.address)
+            generate_all_qrcode(data,args.number,args.size)
     else:
         generate_all_vcards(data,args.number,args.address)
 
