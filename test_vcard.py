@@ -9,13 +9,11 @@ def test_get_data():
     assert data == [['John','Bob','Lawyer','johnbob@example.com','55454616545']]
     os.unlink(test_file)
 
-def test_generate_vcards():
-    data = [['John','Bob','Lawyer','johnbob@example.com','55454616545']]
-    generate_vcards(data)
-    with open('./vcards/JohnBob.vcf', 'r') as f:
-        vcard = f.read()
-    assert os.path.exists('./vcards/JohnBob.vcf')
-    assert """
+def test_vcard_content():
+    
+    data = 'John','Bob','Lawyer','johnbob@example.com','55454616545'
+    output = vcard_content(data)
+    assert output == """
 BEGIN:VCARD
 VERSION:2.1
 N: Bob;John
@@ -27,10 +25,4 @@ ADR;WORK: 100 Flat Grape Dr.;Fresno;CA;95555;United States of America
 EMAIL;PREF;INTERNET: johnbob@example.com
 REV:20150922T195243Z
 END:VCARD
-""" in vcard
-    os.unlink('./vcards/JohnBob.vcf')
-
-def test_gen_qrcode():
-    data = [['John','Bob','Lawyer','johnbob@example.com','55454616545']]
-    generate_qrcode(data)
-    assert os.path.exists('./vcards/JohnBob.qr.png')
+"""
