@@ -1,7 +1,9 @@
+
 import argparse
 import csv
 import logging
 import os
+import psycopg2
 import requests
 
 def parse_args():
@@ -14,8 +16,9 @@ def parse_args():
     parser.add_argument("-a", "--address", help="Address in vcard", action='store',
                         default='100 Flat Grape Dr.;Fresno;CA;95555;United States of America')
     return parser.parse_args()
-
+    
 logger = None
+
 def setup_logging(log_level):
     global logger
     logger = logging.getLogger("vcard")
@@ -38,6 +41,41 @@ def read_data(file):
     with open(file, 'r') as input_file:
         reader = csv.reader(input_file)
         return list(reader)
+
+
+
+def init_database(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS employees (
+                firstname VARCHAR,
+                lastname VARCHAR,
+                title VARCHAR,
+                email VARCHAR,
+                phone_number VARCHAR
+            );""")
+        conn.commit()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}")
+
+def load_csv_to_database(conn, csv_file):
+    try:
+        conn = psycopg2.connect(dbname='sample',user='jishnu')
+        cursor = conn.cursor()
+        with open(csv_file, 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                cursor.execute("""
+                    INSERT INTO employees (firstname, lastname, title, email, phone_number)
+                    VALUES (%s, %s, %s, %s, %s);
+                """, row)
+        conn.commit()
+        logger.info("CSV data loaded into the database successfully")
+    except Exception as e:
+        logger.error(f"Error loading CSV data to database: {e}")
+
 
 def generate_vcard_content(first_name, last_name, title, email, phone_number, address):
     vcard = f"""
@@ -91,18 +129,29 @@ def generate_qrcodes(data, number, size):
             break
     logger.info("QR code generation completed")
 
+
+    
 def main():
     args = parse_args()
     if args.verbose:
         setup_logging(logging.DEBUG)
     else:
         setup_logging(logging.INFO)
-    data = read_data(args.ipfile)
-    if args.qrcode:
-        generate_vcards(data, args.number, args.address)
-        generate_qrcodes(data, args.number, args.size)
-    else:
-        generate_vcards(data, args.number, args.address)
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dbname='sample', user='jishnu')
+        if args.ipfile:
+            init_database(conn)
+            load_csv_to_database(conn, args.ipfile)
+
+        if args.qrcode:
+            data = read_data(args.ipfile)
+            generate_vcards(data, args.number, args.address)
+            generate_qrcodes(data, args.number, args.size)
+    except Exception as e:
+        logger.error(f"Error connecting to the database: {e}")
 
 if __name__ == '__main__':
     main()
+
