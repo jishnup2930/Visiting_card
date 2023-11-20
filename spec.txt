@@ -3,14 +3,19 @@ Author : Jishnu
 Date : 14/11/2023
 
 1. OBJECTIVE:
- The input_data function reads the provided csv file.
+ The init_database function initialize a sql database
+ The create_table function create a table in the database
+           eg: python gen_vcard.py initdb
+ The load_csv_to_database function load a csv file in to table
+           eg: python gen_vcard.py load <inputfile>
  The vcard_content function is the format of each vards we creating.
- The generate_vcard and generate_qrcode functions generates individual vcard and qr code for each employees in the
- provided csv file.
+ The qrcode_content function is the format of eacg qr code we creating
+ The generate_all_vcards and generate_all_qrcodes functions generates individual vcard and qr code for each employees in the
+ provided data
 
 2. INPUT:
 
-Command-Line Arguments: csv_file: The path to the CSV file containing contact information.
+Csv_file: The path to the CSV file containing contact information.
 Each row in the csv_file should contains the  following columns (sample csv file in folder sampledatas)
 
         firstname, lastname, designation, email, phonenumber
@@ -18,7 +23,7 @@ Each row in the csv_file should contains the  following columns (sample csv file
 
 3. OUTPUT:
 
-The code generate one vCard and QRCODE file for each  row in the csv_file and save the file
+The code generate one vcard and qr code file for each  row in the data and save the file
 in to a subdirectory called 'vcards'.
 The file name of each vcard is in the format  
             
@@ -47,43 +52,57 @@ The file name of each qr code is in the format,
 4. EXECUTION:
 
 The script can be executed from the command line using:
+* To print detaiiled logging
+          options: 
+      -v    Detailed logging
+          eg: python gen_vcard.py -v <subcommand>
+      -h    Help
+            You can use -h after and before of the subcommand to get help
+
+* To create a sql database and a table
+       python gen_vcard.py initdb
+      options:
+      -v    To print detailed logging   
+                  eg: python gen_vcard.py -v initdb
+      
+      -u   User name of the database
+                  eg:python gen_vcard.py initdb -u <your_username>
+      
+      -d   Database name 
+                  eg : python gen_vcard.py initdb -d <database_name>
+
+      -t   Table name 
+                  eg: python gen_vcard.py initdb -t <table_name>
+      
+      -h    Help
+      
+* To load a csv file into table
+      python gen_vcard.py load <csv_file>
+      options:
+      -v    To print detailed logging   
+                  eg: python gen_vcard.py -v load <csv_file>
+      
+      -u   User name of the database
+      
+      -d   Database name 
+
+      -t   Table name 
+      
+      -h    Help
+
+*To generate_all_vcards
+      python gen_vcard.py vcard
+
+      options:
+      -n'   Number of vcards to generate
+                  eg :python gen_vcard.py vcard -n10
+
+      -q    To generate qr code and vcard
+                  eg : python gen_vcard.py vcard -q
+
+      -s    To choose the size of the qr code
+                  eg : python gen_vcard.py vcard -s200
+
+      -a    To give address in vcard
+                  eg:python gen_vcard.py vcard -a 'United states of america'
  
-    python3 gen_vcard.py <csvfilename.csv> or python gen_vcard.py <csvfilename.csv>
-
-    * For getting help menu write 
-       
-          python3 gen_vcard <csvfilename.csv> -h
-    
-    example:  
-       Generates sample employee database as csv
-
-       positional arguments:
-        ipfile                Name of input csv file
-
-
-       options:
-      -h, --help            show this help message and exit
-      -v, --verbose         Print detailed logging
-      -n   NUMBER           Number of vcard to generate [default set to 10]
-      -q --qrcode           To generate QR code and vcard
-      -s --size             To customise the size of the QR code [default set to 500]
-      -a --address          To give address for the vcard [default address is *america]
-
-Example: 
-        *python gen_vcard.py <csvfile> -v
-         Print detaiiled logging with vcard of default number of employees
-
-        * python genvcard.py <csvfile> -vn5
-         To generate 5 vcard with detailed logging
-             
-        * python genvcard.py <csvfile> -q
-        To generate QR code and vacrd for default number of employees
-
-        * python genvcard.py <csvfile> -v -vc
-        To generate only vcard for default number of employees
-    
-        * python gen_vcard.py <csvfile> -qs200
-        To generate vacrd and qr code, with qr code size 200x200
-
-        * python gen_vcard.py <csvfile> -a calicut
-        To generate vcard with address calicut
