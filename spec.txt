@@ -13,6 +13,8 @@ Date : 14/11/2023
  The generate_all_vcards and generate_all_qrcodes functions generates individual vcard and qr code for each employees in the
  provided data
 
+ The gen_sheet.py file generate fake data of employees
+
 2. INPUT:
 
 Csv_file: The path to the CSV file containing contact information.
@@ -59,7 +61,7 @@ The script can be executed from the command line using:
       -h    Help
             You can use -h after and before of the subcommand to get help
 
-* To create a sql database and a table
+* To create a sql database and tables for employees and leave table
        python gen_vcard.py initdb
       options:
       -v    To print detailed logging   
@@ -75,7 +77,8 @@ The script can be executed from the command line using:
                   eg: python gen_vcard.py initdb -t <table_name>
       
       -h    Help
-      
+
+
 * To load a csv file into table
       python gen_vcard.py load <csv_file>
       options:
@@ -89,6 +92,12 @@ The script can be executed from the command line using:
       -t   Table name 
       
       -h    Help
+
+* To add leave entry to the table
+      python gen_vcard.py leave <employee_id> <date> <reason>
+
+* To get the leave leaves_remains
+      python gen_vcard leaves_remains <employee_id>
 
 *To generate_all_vcards
       python gen_vcard.py vcard
@@ -105,4 +114,7 @@ The script can be executed from the command line using:
 
       -a    To give address in vcard
                   eg:python gen_vcard.py vcard -a 'United states of america'
- 
+
+* To print leave table
+      python gen_vcard.py <leave_table>
+
