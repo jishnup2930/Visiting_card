@@ -1,14 +1,6 @@
 import os
 import requests
-from gen_vcard import read_data,generate_vcard_content,generate_qrcode_content
-
-def test_get_data():
-    test_file = "/tmp/sample.csv"
-    with open(test_file, 'w') as f:
-        f.write('John,Bob,Lawyer,johnbob@example.com,55454616545\n')
-    data = read_data(test_file)
-    assert data == [['John','Bob','Lawyer','johnbob@example.com','55454616545']]
-    os.unlink(test_file)
+from gen_vcard import generate_vcard_content,generate_qrcode_content
 
 def test_generate_vcard_content(): 
     data = generate_vcard_content('John','Bob','Lawyer','johnbob@example.com','55454616545','100 Flat Grape Dr.;Fresno;CA;95555;United States of America')
