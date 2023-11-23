@@ -1,10 +1,32 @@
-# Visiting cards
+HR management
+A command-line tool for managing employee data and leave records in a PostgreSQL database.
 
-This program generates visiting cards and qr codes for a list of employees provided in a CSV
-file
+Prerequisites
+    import argparse
+    import csv
+    import logging
+    import os
+    import requests
+    import sys
+    import psycopg2
+    from psycopg2.extensions import AsIs
 
-## How to run
+Installation
+pip install python3
+pip install psycopg2
+pip install requests
 
-Go to the directory that file saved and run the program using,
+Usage
+Read spec.txt for usage
 
-          python3 gen_vard.py
+Commands
+ - initdb: Initialize the database.
+ - load: Load data into the database from a CSV file.
+ - query: Retrieve information for a single employee.
+            -c or --vcard: Generate a vCard for the employee.
+            -q or --qrcode: Generate a QR code for the employee.
+ - leave: Update leave status.
+ - leave_count: Check remaining leave count.
+ - delete: Delete a table.
+ - update: Edit a table.
+ - remove: Remove a row from a table.
