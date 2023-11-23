@@ -1,39 +1,24 @@
-Title : Generating visiting cards for employees
+Title : HR Management System
 Author : Jishnu
 Date : 14/11/2023
 
-1. OBJECTIVE:
- The init_database function initialize a sql database
- The create_table function create a table in the database
-           eg: python gen_vcard.py initdb
- The load_csv_to_database function load a csv file in to table
-           eg: python gen_vcard.py load <inputfile>
- The vcard_content function is the format of each vards we creating.
- The qrcode_content function is the format of eacg qr code we creating
- The generate_all_vcards and generate_all_qrcodes functions generates individual vcard and qr code for each employees in the
- provided data
+OVERVIEW
 
- The gen_sheet.py file generate fake data of employees
+This HR Management System is a command-line tool built in Python, 
+designed to manage employee data and leave records in a database.
+It offers functionalities such as importing employee data from CSV files,
+querying employee information, managing leave status, and performing table operations like deletion, 
+updates, and removals.
 
-2. INPUT:
 
-Csv_file: The path to the CSV file containing contact information.
-Each row in the csv_file should contains the  following columns (sample csv file in folder sampledatas)
+INPUT:
+
+Csv_file: Each row in the csv_file should contains the  following columns (sample csv file in folder sample data)
 
         firstname, lastname, designation, email, phonenumber
 
 
-3. OUTPUT:
-
-The code generate one vcard and qr code file for each  row in the data and save the file
-in to a subdirectory called 'vcards'.
-The file name of each vcard is in the format  
-            
-            firstnamelastname.vcf
-
-The file name of each qr code is in the format,
-            
-            firstnamelastname.qr.png          
+Model of vcard         
 
       * This is a sample vcard file
         
@@ -51,70 +36,59 @@ The file name of each qr code is in the format,
 
         * The qr code contains this data
 
-4. EXECUTION:
 
-The script can be executed from the command line using:
-* To print detaiiled logging
-          options: 
-      -v    Detailed logging
-          eg: python gen_vcard.py -v <subcommand>
-      -h    Help
-            You can use -h after and before of the subcommand to get help
 
-* To create a sql database and tables for employees and leave table
-       python gen_vcard.py initdb
-      options:
-      -v    To print detailed logging   
-                  eg: python gen_vcard.py -v initdb
+OBJECTIVE:
+
+The handle_initdb function initialize a sql database
+
+The function handle_load function load a csv file in to table
+
+The function generate_one_vcard create one vcard
+ 
+The function generate_one_qrcode generate one qr code and save into a subdirectory qr_code
+
+The function handle_query fetch the data from database (-c --vacrd,-q --qrcode )
+
+The function handle_leave to add leave into leaves table
+ 
+The function handle_leave_count get the leave remaining of a employee
+ 
+The function handle_delete delete a table
+
+The function handle_update update the table 
+
+The function handle_remove  remove row in a table
+
+
+USAGE
+
+ - initdb: Initialize the database.
+ - load: Import employee data into the database from a CSV file.
+ - query: Retrieve information for a single employee.
+ - leave: Update leave status for an employee.
+ - leave_count: Check the remaining leave count for an employee.
+ - delete: Delete a specific table.
+ - update: Edit a table (update specific entries).
+ - remove: Remove a row from a table
+
+
+EXAMPLE
+      python hr.py initdb
+
+      python hr.py load employees.csv
+
+      python hr.py query 123 -c -q
       
-      -u   User name of the database
-                  eg:python gen_vcard.py initdb -u <your_username>
+      python hr.py leave 123 '2023-11-22' 'Vacation'
       
-      -d   Database name 
-                  eg : python gen_vcard.py initdb -d <database_name>
-
-      -t   Table name 
-                  eg: python gen_vcard.py initdb -t <table_name>
+      python hr.py leave_count 123 20
       
-      -h    Help
-
-
-* To load a csv file into table
-      python gen_vcard.py load <csv_file>
-      options:
-      -v    To print detailed logging   
-                  eg: python gen_vcard.py -v load <csv_file>
+      python hr.py delete employees
       
-      -u   User name of the database
+      python hr.py update leaves 123 '2023-11-22' '2023-11-23' 'Sick leave'
       
-      -d   Database name 
+      python hr.py remove leaves 123 '2023-11-22'
 
-      -t   Table name 
-      
-      -h    Help
 
-* To add leave entry to the table
-      python gen_vcard.py leave <employee_id> <date> <reason>
-
-* To get the leave leaves_remains
-      python gen_vcard leaves_remains <employee_id>
-
-*To generate_all_vcards
-      python gen_vcard.py vcard
-
-      options:
-      -n'   Number of vcards to generate
-                  eg :python gen_vcard.py vcard -n10
-
-      -q    To generate qr code and vcard
-                  eg : python gen_vcard.py vcard -q
-
-      -s    To choose the size of the qr code
-                  eg : python gen_vcard.py vcard -s200
-
-      -a    To give address in vcard
-                  eg:python gen_vcard.py vcard -a 'United states of america'
-
-* To print leave table
-      python gen_vcard.py <leave_table>
 
