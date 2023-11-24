@@ -1,41 +1,29 @@
 import os
 import requests
-from gen_vcard import generate_vcard_content,generate_qrcode_content
+from hr import generate_one_vcard,generate_one_qrcode
 
-def test_generate_vcard_content(): 
-    data = generate_vcard_content('John','Bob','Lawyer','johnbob@example.com','55454616545','100 Flat Grape Dr.;Fresno;CA;95555;United States of America')
-    assert data == """
-    BEGIN:VCARD
-    VERSION:2.1
-    N: Bob;John
-    FN: John Bob
-    ORG:Authors, Inc.
-    TITLE: Lawyer
-    TEL;WORK;VOICE: 55454616545
-    ADR;WORK: 100 Flat Grape Dr.;Fresno;CA;95555;United States of America
-    EMAIL;PREF;INTERNET: johnbob@example.com
-    REV:20150922T195243Z
-    END:VCARD
-    """
+def test_generate_vcard(): 
+    data = generate_one_vcard('John','Bob','Junior Engineer','johnbob@example.com','55454616545')
+    assert data == f"""
+            BEGIN:VCARD
+            VERSION:2.1
+            N:John;Bob
+            FN:Bob John
+            ORG:Authors, Inc.
+            TITLE:Junior Engineer
+            TEL;WORK;VOICE:55454616545
+            ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
+            EMAIL;PREF;INTERNET:johnbob@example.com
+            REV:20150922T195243Z
+            END:VCARD"""
+            
 
-def test_generate_qrcode_content():
-    size = 500
-    vcard = """
-BEGIN:VCARD
-VERSION:2.1
-N: Bob;John
-FN: John Bob
-ORG:Authors, Inc.
-TITLE: Lawyer
-TEL;WORK;VOICE: 55454616545
-ADR;WORK: 100 Flat Grape Dr.;Fresno;CA;95555;United States of America
-EMAIL;PREF;INTERNET: johnbob@example.com
-REV:20150922T195243Z
-END:VCARD
-"""
-    expected_url = requests.get(f'https://chart.googleapis.com/chart?cht=qr&chs={size}x{size}&chl={vcard}')
+def test_generate_qrcode():
+    lname, fname, designation, email, phone = 'John','Bob','Junior Engineer','johnbob@example.com','55454616545'
+
+    expected_url = requests.get(f'https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl={lname, fname, designation, email, phone}')
     expected_qr_content = expected_url.content
 
-    generated_qr = generate_qrcode_content(vcard, size)
+    generated_qr = generate_one_qrcode(lname, fname, designation, email, phone)
 
     assert generated_qr == expected_qr_content
