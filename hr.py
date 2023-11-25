@@ -47,7 +47,7 @@ def parse_args():
 
     count_parser = subparsers.add_parser('leave_count', help="Check remaining leave count")
     count_parser.add_argument('employee_id',help = "Employee id ",type=int)
-    count_parser.add_argument("total_leave", help = "Total leave for the employee",type=int)
+    # count_parser.add_argument("total_leave", help = "Total leave for the employee",type=int)
 
     delete_parser = subparsers.add_parser('delete',help='Delete table')
     delete_parser.add_argument('tablename',help='Table name',action= 'store')
@@ -96,7 +96,7 @@ def handle_initdb(args):
         con.commit()
         logger.info("Tables created successfully")
     except psycopg2.OperationalError as e:
-        raise HRException(f"Database '{args.dbname}' doesn't exist")
+        raise HRException(f"Database '{args.dbname}' doesn't exist:{e}")
 
 def handle_load(args):
     try:
@@ -109,6 +109,7 @@ def handle_load(args):
                 query = "insert into employees(lname, fname, designation, email, phone) values (%s, %s, %s, %s, %s)"
                 cur.execute(query, (lname, fname, designation, email, phone))
             con.commit()
+            logger.info("Data loaded successfully")
     except HRException as e:
         logger.error('Error: %s',e)
         
@@ -165,30 +166,46 @@ def handle_leave_count(args):
         conn = psycopg2.connect(dbname=args.dbname)
         cursor = conn.cursor()
         cursor.execute(sql,(args.employee_id,))     
-        leaves_data = cursor.fetchone()   
+        leaves_data = cursor.fetchone()
+    
+        if leaves_data is None:
+            query = """SELECT d.num_of_leaves AS NUMBER, e.fname, e.lname, d.designation_name 
+                            FROM designation d 
+                            JOIN employees e 
+                            ON d.designation_name = e.designation 
+                            WHERE e.id = %s; """
+            cursor.execute(query,(args.employee_id,))
+            data =cursor.fetchone()
+            if not data:
+                print("Employee id not found in the list")
+            else:
+                leaves_remaining = data[0]
+                firstname = data[1]
+                lastname = data[2]
+                leaves_taken = 0
 
-        if leaves_data:
+                print(f"""
+                Employee name    : {firstname} {lastname}
+                Employee id      : {args.employee_id}
+                Total leaves     : {leaves_remaining} 
+                Leaves taken     : {leaves_taken}
+                Leaves remaining : {leaves_remaining}
+                \n""")
+
+        else:
             leaves_taken =leaves_data[0]
             firstname = leaves_data[1]
             lastname =leaves_data[2]
-            leave_remaining = args.total_leave - leaves_taken
+            num_of_leaves = leaves_data[4]
+            leaves_remaining = num_of_leaves - leaves_taken
             print(f"""
             Employee name    : {firstname} {lastname}
             Employee id      : {args.employee_id}
-            Total leaves     : {args.total_leave} 
+            Total leaves     : {num_of_leaves} 
             Leaves taken     : {leaves_taken}
-            Leaves remaining : {leave_remaining}
+            Leaves remaining : {leaves_remaining}
             \n""")
-        else:
-            print(f"   Employee id {args.employee_id} : No leaves taken yet\n")        
-        cursor.execute("""SELECT COUNT(id)
-                        FROM employees
-                        """)
-        total_count = cursor.fetchone()
-        if total_count:
-            value =total_count[0]
-            if args.employee_id > value:
-                logger.info("Employee id not found in the list\n")    
+       
     except HRException as e:
         logger.error("Error fetching leave data: %s" ,{e})
 
