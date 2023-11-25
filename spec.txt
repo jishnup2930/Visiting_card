@@ -64,13 +64,35 @@ The function handle_remove  remove row in a table
 USAGE
 
  - initdb: Initialize the database.
+           python hr.py initdb
+
  - load: Import employee data into the database from a CSV file.
+            python hr.py load filename.csv
+
  - query: Retrieve information for a single employee.
+            python hr.py query 
+ - query -c : Retrieve visiting card for a single employee
+            python hr.py query -c
+
+ -  query -q : Retrieve visiting QR code for a single employee
+            python hr.py query -q
+                
  - leave: Update leave status for an employee.
+            python hr.py leave <id> <date> <reason>
+
  - leave_count: Check the remaining leave count for an employee.
- - delete: Delete a specific table.
+            python hr.py leave_count <id>
+ - leave_count -e : Export leave count data as csv_file
+            python hr.py leave_count <id> -e
+
+ - delete: Delete data in a specific table.
+            python hr.py delete
+
  - update: Edit a table (update specific entries).
+            python hr.py <employee_id> <new_date> <new reason>
+
  - remove: Remove a row from a table
+            python hr.py  remove <employee_id> <date>
 
 
 EXAMPLE
@@ -83,6 +105,8 @@ EXAMPLE
       python hr.py leave 123 '2023-11-22' 'Vacation'
       
       python hr.py leave_count 123 20
+
+      python hr.py leave_count 123 20 -e (Date export as a csv file)
       
       python hr.py delete employees
       
