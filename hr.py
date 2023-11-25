@@ -47,7 +47,7 @@ def parse_args():
 
     count_parser = subparsers.add_parser('leave_count', help="Check remaining leave count")
     count_parser.add_argument('employee_id',help = "Employee id ",type=int)
-    # count_parser.add_argument("total_leave", help = "Total leave for the employee",type=int)
+    count_parser.add_argument("-e",'--export', help = "Export data as a csv file",action ='store_true',default = False)
 
     delete_parser = subparsers.add_parser('delete',help='Delete table')
     delete_parser.add_argument('tablename',help='Table name',action= 'store')
@@ -57,7 +57,6 @@ def parse_args():
     update_parser.add_argument('employee_id',help = "Employee id ")
     update_parser.add_argument('new_date',help = "Update leave Date")
     update_parser.add_argument('new_reason',help = "Update reason of leave")
-
 
     remove_parser = subparsers.add_parser("remove",help="Remove a row from the table")
     remove_parser.add_argument('table',help='Table name')
@@ -138,8 +137,7 @@ def handle_query(args):
                 os.mkdir('qr_code')
             with open(os.path.join('qr_code', qr_filename), 'wb') as file:
                 file.write(QR)
-                logger.info("QR code generated successfully")
-            
+                logger.info("QR code generated successfully")     
         con.close()
         logger.info("Data generated successfully")
     except HRException as e:
@@ -165,19 +163,19 @@ def handle_leave_count(args):
     try:
         conn = psycopg2.connect(dbname=args.dbname)
         cursor = conn.cursor()
-        cursor.execute(sql,(args.employee_id,))     
+        cursor.execute(sql, (args.employee_id,))
         leaves_data = cursor.fetchone()
-    
+
         if leaves_data is None:
             query = """SELECT d.num_of_leaves AS NUMBER, e.fname, e.lname, d.designation_name 
-                            FROM designation d 
-                            JOIN employees e 
-                            ON d.designation_name = e.designation 
-                            WHERE e.id = %s; """
-            cursor.execute(query,(args.employee_id,))
-            data =cursor.fetchone()
+                        FROM designation d 
+                        JOIN employees e 
+                        ON d.designation_name = e.designation 
+                        WHERE e.id = %s; """
+            cursor.execute(query, (args.employee_id,))
+            data = cursor.fetchone()
             if not data:
-                print("Employee id not found in the list")
+                print("\n   Employee ID not found in the list\n")
             else:
                 leaves_remaining = data[0]
                 firstname = data[1]
@@ -193,11 +191,12 @@ def handle_leave_count(args):
                 \n""")
 
         else:
-            leaves_taken =leaves_data[0]
+            leaves_taken = leaves_data[0]
             firstname = leaves_data[1]
-            lastname =leaves_data[2]
+            lastname = leaves_data[2]
             num_of_leaves = leaves_data[4]
             leaves_remaining = num_of_leaves - leaves_taken
+
             print(f"""
             Employee name    : {firstname} {lastname}
             Employee id      : {args.employee_id}
@@ -205,9 +204,32 @@ def handle_leave_count(args):
             Leaves taken     : {leaves_taken}
             Leaves remaining : {leaves_remaining}
             \n""")
-       
+
+        cursor.execute('SELECT COUNT(id) FROM employees;')
+        count = cursor.fetchone()[0]
+
+        if args.export :
+            if args.employee_id <= count:      
+                if not os.path.exists('csv_file'):
+                    os.mkdir('csv_file')
+                filename = f"{args.employee_id}_leave_data.csv"
+                with open(os.path.join("csv_file", filename),'w') as csvfile:
+                    fieldnames = ['Employee ID', 'First Name', 'Last Name', 'Total Leaves', 'Leaves Taken', 'Leaves Remaining']
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerow({
+                        'Employee ID': args.employee_id,
+                        'First Name': firstname,
+                        'Last Name': lastname,
+                        'Total Leaves': num_of_leaves if leaves_data else leaves_remaining,
+                        'Leaves Taken': leaves_taken if leaves_data else 0,
+                        'Leaves Remaining': leaves_remaining if leaves_data else leaves_remaining
+                    })
+                logger.info(f"Data exported to {filename}")
+            else:
+                logger.info("Employee ID is out of range for export")
     except HRException as e:
-        logger.error("Error fetching leave data: %s" ,{e})
+        logger.error("Error fetching leave data: %s", e)
 
 def handle_delete(args):
     try:
@@ -230,6 +252,7 @@ def handle_update(args):
         logger.info("Table updated successfully")
     except HRException as e:
         logger.info("Error : %s",e)
+
 def handle_remove(args):
     try:
         conn = psycopg2.connect(dbname=args.dbname)
