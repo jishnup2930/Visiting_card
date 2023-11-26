@@ -49,10 +49,12 @@ The function generate_one_vcard create one vcard
 The function generate_one_qrcode generate one qr code and save into a subdirectory qr_code
 
 The function handle_query fetch the data from database (-c --vacrd,-q --qrcode )
+  -QR code save in a subdirectory called qr_code
 
 The function handle_leave to add leave into leaves table
  
-The function handle_leave_count get the leave remaining of a employee
+The function handle_leave_count get the leave remaining of a employee(-e = export as a csv file)
+  -The exporting csv file save in a subdirectory called csv_file
  
 The function handle_delete delete a table
 
@@ -74,7 +76,7 @@ USAGE
  - query -c : Retrieve visiting card for a single employee
             python hr.py query -c
 
- -  query -q : Retrieve visiting QR code for a single employee
+ -  query -q : Retrieve  QR code for a single employee
             python hr.py query -q
                 
  - leave: Update leave status for an employee.
@@ -82,6 +84,7 @@ USAGE
 
  - leave_count: Check the remaining leave count for an employee.
             python hr.py leave_count <id>
+
  - leave_count -e : Export leave count data as csv_file
             python hr.py leave_count <id> -e
 
@@ -89,7 +92,7 @@ USAGE
             python hr.py delete
 
  - update: Edit a table (update specific entries).
-            python hr.py <employee_id> <new_date> <new reason>
+            python hr.py update <new_employee_id> <new_date> <new reason> <id>
 
  - remove: Remove a row from a table
             python hr.py  remove <employee_id> <date>
@@ -104,13 +107,13 @@ EXAMPLE
       
       python hr.py leave 123 '2023-11-22' 'Vacation'
       
-      python hr.py leave_count 123 20
+      python hr.py leave_count 123
 
-      python hr.py leave_count 123 20 -e (Date export as a csv file)
+      python hr.py leave_count 123  -e (Date export as a csv file)
       
-      python hr.py delete employees
+      python hr.py delete leaves
       
-      python hr.py update leaves 123 '2023-11-22' '2023-11-23' 'Sick leave'
+      python hr.py update leaves 123  '2023-11-23' 'Sick leave' 1
       
       python hr.py remove leaves 123 '2023-11-22'
 
