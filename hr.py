@@ -36,8 +36,8 @@ def parse_args():
     import_parser.add_argument("employees_file", help="List of employees to import")
 
     query_parser = subparsers.add_parser("query", help="Get information for a single employee")
-    query_parser.add_argument("-c",'--vcard', action="store_true", default=False, help="Generate vcard for employee")
     query_parser.add_argument("id", help="employee id")
+    query_parser.add_argument("-c",'--vcard', help="Generate vcard for employee",action="store_true", default=False)
     query_parser.add_argument('-q','--qrcode',help='Generate QR code',default=False,action='store_true')
 
     add_parser = subparsers.add_parser('leave',help="Update leave status")
@@ -45,21 +45,22 @@ def parse_args():
     add_parser.add_argument('date',help = "Leave Date")
     add_parser.add_argument('reason',help = "Reason of leave")
 
-    count_parser = subparsers.add_parser('leave_count', help="Check remaining leave count")
+    count_parser = subparsers.add_parser('leave_count', help="Check remaining leave count of a employee")
     count_parser.add_argument('employee_id',help = "Employee id ",type=int)
     count_parser.add_argument("-e",'--export', help = "Export data as a csv file",action ='store_true',default = False)
 
-    delete_parser = subparsers.add_parser('delete',help='Delete table')
+    delete_parser = subparsers.add_parser('delete',help='Delete data from table')
     delete_parser.add_argument('tablename',help='Table name',action= 'store')
 
     update_parser = subparsers.add_parser('update',help="Edit table")
-    update_parser.add_argument ('table',help = 'Table name')
-    update_parser.add_argument('employee_id',help = "Employee id ")
+    update_parser.add_argument ('-t','--table',help = 'Table name',default='leaves')
     update_parser.add_argument('new_date',help = "Update leave Date")
     update_parser.add_argument('new_reason',help = "Update reason of leave")
+    update_parser.add_argument('employee_id',help = "Employee id ")
+    update_parser.add_argument('id',help="ID number of row")
 
     remove_parser = subparsers.add_parser("remove",help="Remove a row from the table")
-    remove_parser.add_argument('table',help='Table name')
+    remove_parser.add_argument('--table',help='Table name',default = 'leaves')
     remove_parser.add_argument('employee_id',help = "Employee id ")
     remove_parser.add_argument('date',help = "Leave Date")
 
@@ -118,28 +119,35 @@ def handle_query(args):
         cur = con.cursor()
         query = "SELECT fname, lname, designation, email, phone from employees where id = %s"
         cur.execute(query, (args.id,))
-        fname, lname, designation, email, phone = cur.fetchone()
+        data= cur.fetchone()
+        
+        if not data :
+            print("\n   No data found\n")
+                
+        else:
+            fname, lname, designation, email, phone = data
 
-        print (f"""
+            print (f"""
     Name        : {fname} {lname}
     Designation : {designation}
     Email       : {email}
     Phone       : {phone}\n""")
-        
-        vcard = generate_one_vcard(lname, fname, designation, email, phone)
-        QR = generate_one_qrcode(lname, fname, designation, email, phone)
-        if (args.vcard):
-            print (f"{vcard}\n")
             
-        if (args.qrcode):
-            qr_filename = f'{fname}_{lname}.qr.png'
-            if not os.path.exists('qr_code'):
-                os.mkdir('qr_code')
-            with open(os.path.join('qr_code', qr_filename), 'wb') as file:
-                file.write(QR)
-                logger.info("QR code generated successfully")     
+            logger.info("Data generated successfully")
+        
+            vcard = generate_one_vcard(lname, fname, designation, email, phone)
+            QR = generate_one_qrcode(lname, fname, designation, email, phone)
+            if (args.vcard):
+                print (f"{vcard}\n")
+                logger.info("VCard generated successfully")
+            if (args.qrcode):
+                qr_filename = f'{fname}_{lname}.qr.png'
+                if not os.path.exists('qr_code'):
+                    os.mkdir('qr_code')
+                with open(os.path.join('qr_code', qr_filename), 'wb') as file:
+                    file.write(QR)
+                    logger.info("QR code for %s %s generated successfully",fname,lname)     
         con.close()
-        logger.info("Data generated successfully")
     except HRException as e:
         logger.debug("Error : %s",e)
 
@@ -183,12 +191,12 @@ def handle_leave_count(args):
                 leaves_taken = 0
 
                 print(f"""
-                Employee name    : {firstname} {lastname}
-                Employee id      : {args.employee_id}
-                Total leaves     : {leaves_remaining} 
-                Leaves taken     : {leaves_taken}
-                Leaves remaining : {leaves_remaining}
-                \n""")
+            Employee name    : {firstname} {lastname}
+            Employee id      : {args.employee_id}
+            Total leaves     : {leaves_remaining} 
+            Leaves taken     : {leaves_taken}
+            Leaves remaining : {leaves_remaining}
+            \n""")
 
         else:
             leaves_taken = leaves_data[0]
@@ -246,8 +254,8 @@ def handle_update(args):
     try:
         conn = psycopg2.connect(dbname=args.dbname)
         cursor = conn.cursor()
-        query = f"UPDATE {args.table} SET date = %s, reason = %s WHERE employee_id = %s ;"
-        cursor.execute(query,(args.new_date,args.new_reason,args.employee_id))
+        query = f"UPDATE {args.table} SET  employee_id = %s , date = %s, reason = %s  WHERE id = %s ;"
+        cursor.execute(query,(args.employee_id,args.new_date,args.new_reason,args.id))
         conn.commit()
         logger.info("Table updated successfully")
     except HRException as e:
