@@ -40,27 +40,30 @@ Model of vcard
 
 OBJECTIVE:
 
-The handle_initdb function initialize a sql database
+The 'handle_initdb' function initialize a sql database
 
-The function handle_load function load a csv file in to table
+The function 'handle_import' function load a csv file in to table
 
-The function generate_one_vcard create one vcard
+The function 'generate_one_vcard' create one vcard
  
-The function generate_one_qrcode generate one qr code and save into a subdirectory qr_code
+The function 'generate_one_qrcode' generate one qr code and save into a subdirectory qr_code
 
-The function handle_query fetch the data from database (-c --vacrd,-q --qrcode )
+The function 'handle_query' fetch the data from database (-c --vacrd,-q --qrcode )
   -QR code save in a subdirectory called qr_code
 
-The function handle_leave to add leave into leaves table
+The function 'handle_leave' to add leave into leaves table
  
-The function handle_leave_count get the leave remaining of a employee(-e = export as a csv file)
+The function 'handle_leave_count' get the leave remaining of a employee(-e = export as a csv file)
   -The exporting csv file save in a subdirectory called csv_file
  
-The function handle_delete delete a table
+The function 'handle_delete' delete a table
 
-The function handle_update update the table 
+The function 'handle_update' update the table 
 
-The function handle_remove  remove row in a table
+The function 'handle_remove'  remove row in a table
+
+The function 'handle_export_all_employees_leave_count_data  export leave count details of all employees into
+    a file all_employees_leave_data
 
 
 USAGE
@@ -68,7 +71,7 @@ USAGE
  - initdb: Initialize the database.
            python hr.py initdb
 
- - load: Import employee data into the database from a CSV file.
+ - import: Import employee data into the database from a CSV file.
             python hr.py load filename.csv
 
  - query: Retrieve information for a single employee.
@@ -97,11 +100,14 @@ USAGE
  - remove: Remove a row from a table
             python hr.py  remove <employee_id> <date>
 
+ - export : Export all employees leave count data
+            python hr.py export
+
 
 EXAMPLE
       python hr.py initdb
 
-      python hr.py load employees.csv
+      python hr.py import employees.csv
 
       python hr.py query 123 -c -q
       
@@ -113,9 +119,11 @@ EXAMPLE
       
       python hr.py delete leaves
       
-      python hr.py update leaves 123  '2023-11-23' 'Sick leave' 1
+      python hr.py update 123  '2023-11-23' 'Sick leave' 1
       
-      python hr.py remove leaves 123 '2023-11-22'
+      python hr.py remove 123 '2023-11-22'
+
+      python hr.py export 
 
 
 
