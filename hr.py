@@ -2,10 +2,10 @@ import argparse
 import csv
 import logging
 import os
-import requests
-import sys
 import psycopg2
 from psycopg2.extensions import AsIs
+import requests
+import sys
 
 class HRException(Exception): pass
 
@@ -38,12 +38,12 @@ def parse_args():
     import_parser.add_argument("employees_file", help="List of employees to import")
 
     query_parser = subparsers.add_parser("query", help="Get information for a single employee")
-    query_parser.add_argument("id", help="employee id")
+    query_parser.add_argument("employee_id", help="employee id",type=int)
     query_parser.add_argument("-c",'--vcard', help="Generate vcard for employee",action="store_true", default=False)
     query_parser.add_argument('-q','--qrcode',help='Generate QR code',default=False,action='store_true')
 
     add_parser = subparsers.add_parser('leave',help="Update leave status")
-    add_parser.add_argument('employee_id',help = "Employee id ")
+    add_parser.add_argument('employee_id',help = "Employee id ",type=int)
     add_parser.add_argument('date',help = "Leave Date")
     add_parser.add_argument('reason',help = "Reason of leave")
 
@@ -114,57 +114,69 @@ def handle_import(args):
             logger.info("Data imported successfully")
     except HRException as e:
         logger.error('Error: %s',e)
-        
+
 def handle_query(args):
     try:
         con = psycopg2.connect(dbname=args.dbname)
         cur = con.cursor()
-        query = "SELECT fname, lname, designation, email, phone from employees where id = %s"
-        cur.execute(query, (args.id,))
-        data= cur.fetchone()
-        logger.debug(query)
-        if not data :
-            print("\n   No data found\n")
-                
+        cur.execute("SELECT COUNT(id) FROM employees;")
+        max_employees = cur.fetchone()[0]
+        if args.employee_id > max_employees:
+            print(" \n    Employee ID out of range\n")
         else:
-            fname, lname, designation, email, phone = data
+            query = "SELECT fname, lname, designation, email, phone from employees where id = %s"
+            cur.execute(query, (args.employee_id,))
+            fname, lname, designation, email, phone = cur.fetchone()
 
             print (f"""
-    Name        : {fname} {lname}
-    Designation : {designation}
-    Email       : {email}
-    Phone       : {phone}\n""")
+        Name        : {fname} {lname}
+        Designation : {designation}
+        Email       : {email}
+        Phone       : {phone}\n""")
             
-            logger.info("Data generated successfully")
-        
             vcard = generate_one_vcard(lname, fname, designation, email, phone)
             QR = generate_one_qrcode(lname, fname, designation, email, phone)
             if (args.vcard):
                 print (f"{vcard}\n")
-                logger.info("VCard generated successfully")
+                
             if (args.qrcode):
                 qr_filename = f'{fname}_{lname}.qr.png'
                 if not os.path.exists('qr_code'):
                     os.mkdir('qr_code')
                 with open(os.path.join('qr_code', qr_filename), 'wb') as file:
                     file.write(QR)
-                    logger.info("QR code for %s %s generated successfully",fname,lname)     
-        con.close()
+                    logger.info("QR code generated successfully")
+            con.close()
+            logger.info("Data generated successfully")
     except HRException as e:
         logger.debug("Error : %s",e)
 
 def handle_leave(args):
-    with open("sql/leave_update.sql") as f:
-        sql =f.read()
-        logger.debug(sql)
     try:
         conn = psycopg2.connect(dbname=args.dbname)
         cursor = conn.cursor()
-        cursor.execute(sql,(args.employee_id,args.date,args.reason))
-        conn.commit()
-        logger.info("Data inserted into leaves table successfully")
+        cursor.execute("SELECT COUNT(id) FROM employees;")
+        max_employees = cursor.fetchone()[0]
+        if args.employee_id > max_employees:
+            print("\n     Employee ID out of range.\n")
+        else:    
+            cursor.execute("SELECT num_of_leaves FROM designation d JOIN employees e ON d.designation_name = e.designation WHERE e.id = %s;", (args.employee_id,))
+            total_leaves = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM leaves WHERE employee_id = %s;", (args.employee_id,))
+            leaves_taken = cursor.fetchone()[0]
+
+            if leaves_taken >= total_leaves:
+                print("\n     No leaves left for the employee.\n")
+            else:
+                with open("sql/leave_update.sql") as f:
+                    sql = f.read()
+                    logger.debug(sql)
+                cursor.execute(sql, (args.employee_id, args.date, args.reason))
+                conn.commit()
+                logger.info("Data inserted into leaves table successfully")
     except HRException as e:
-        logger.error("Error updating data : %s ",e)
+        logger.error("Error updating data:%s",e)
 
 def handle_leave_count(args):
     with open("sql/leave_count.sql") as f:
