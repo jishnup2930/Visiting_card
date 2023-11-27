@@ -29,10 +29,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description="HR management")
     parser.add_argument("--dbname", help="Name of database to use", default="hr")
     parser.add_argument("-v", help="Print detailed logging", action="store_true", default=False)
-    subparsers = parser.add_subparsers(dest="subcommand",help='Subcommand')
-    subparsers.add_parser("initdb", help="initialise the database")
 
-    import_parser = subparsers.add_parser("load", help="Load data in to database")
+    subparsers = parser.add_subparsers(dest="subcommand",help='Subcommand')
+
+    subparsers.add_parser("initdb", help="Initialize the database")
+
+    import_parser = subparsers.add_parser("import", help="Import data in to database")
     import_parser.add_argument("employees_file", help="List of employees to import")
 
     query_parser = subparsers.add_parser("query", help="Get information for a single employee")
@@ -98,7 +100,7 @@ def handle_initdb(args):
     except psycopg2.OperationalError as e:
         raise HRException(f"Database '{args.dbname}' doesn't exist:{e}")
 
-def handle_load(args):
+def handle_import(args):
     try:
         con = psycopg2.connect(dbname=args.dbname)
         cur = con.cursor()
@@ -109,7 +111,7 @@ def handle_load(args):
                 query = "insert into employees(lname, fname, designation, email, phone) values (%s, %s, %s, %s, %s)"
                 cur.execute(query, (lname, fname, designation, email, phone))
             con.commit()
-            logger.info("Data loaded successfully")
+            logger.info("Data imported successfully")
     except HRException as e:
         logger.error('Error: %s',e)
         
@@ -120,7 +122,7 @@ def handle_query(args):
         query = "SELECT fname, lname, designation, email, phone from employees where id = %s"
         cur.execute(query, (args.id,))
         data= cur.fetchone()
-        
+        logger.debug(query)
         if not data :
             print("\n   No data found\n")
                 
@@ -248,7 +250,7 @@ def handle_delete(args):
         conn.commit()  
         logger.info ("Data in the table %s deleted successfully",args.tablename) 
     except HRException as e:
-        logger.info('Error: %s',e) 
+        logger.error('Error: %s',e) 
 
 def handle_update(args):
     try:
@@ -259,7 +261,7 @@ def handle_update(args):
         conn.commit()
         logger.info("Table updated successfully")
     except HRException as e:
-        logger.info("Error : %s",e)
+        logger.error("Error : %s",e)
 
 def handle_remove(args):
     try:
@@ -267,10 +269,11 @@ def handle_remove(args):
         cursor = conn.cursor()
         query = f"DELETE FROM {args.table} WHERE employee_id = %s AND date = %s;"
         cursor.execute(query,(args.employee_id,args.date))
+        logger.debug(query)
         conn.commit()
         logger.info("Row removed from table %s",args.table)
     except HRException as e:
-        logger.info("Error :%s",e)
+        logger.error("Error :%s",e)
 
 def main():
     try:
@@ -278,7 +281,7 @@ def main():
         init_logger(args.v)
         commands = {
                 "initdb" : handle_initdb,
-                "load" : handle_load,
+                "import" : handle_import,
                 "query" : handle_query,
                 "leave" : handle_leave,
                 "leave_count" : handle_leave_count,
