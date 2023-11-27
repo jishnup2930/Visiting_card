@@ -29,6 +29,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="HR management")
     parser.add_argument("--dbname", help="Name of database to use", default="hr")
     parser.add_argument("-v", help="Print detailed logging", action="store_true", default=False)
+    parser.add_argument('--table',help='Table name',default = 'leaves')
 
     subparsers = parser.add_subparsers(dest="subcommand",help='Subcommand')
 
@@ -38,7 +39,7 @@ def parse_args():
     import_parser.add_argument("employees_file", help="List of employees to import")
 
     query_parser = subparsers.add_parser("query", help="Get information for a single employee")
-    query_parser.add_argument("employee_id", help="employee id",type=int)
+    query_parser.add_argument('employee_id',help = "Employee id ",type=int)
     query_parser.add_argument("-c",'--vcard', help="Generate vcard for employee",action="store_true", default=False)
     query_parser.add_argument('-q','--qrcode',help='Generate QR code',default=False,action='store_true')
 
@@ -52,19 +53,19 @@ def parse_args():
     count_parser.add_argument("-e",'--export', help = "Export data as a csv file",action ='store_true',default = False)
 
     delete_parser = subparsers.add_parser('delete',help='Delete data from table')
-    delete_parser.add_argument('tablename',help='Table name',action= 'store')
+    delete_parser.add_argument('tablename',help='Delete data from table',action= 'store')
 
     update_parser = subparsers.add_parser('update',help="Edit table")
-    update_parser.add_argument ('-t','--table',help = 'Table name',default='leaves')
     update_parser.add_argument('id',help="ID number of row")
     update_parser.add_argument('new_date',help = "Update leave Date")   
-    update_parser.add_argument('employee_id',help = "Employee id ")
+    update_parser.add_argument('new_employee_id',help = "Employee id ",type=int)
     update_parser.add_argument('new_reason',help = "Update reason of leave")
 
     remove_parser = subparsers.add_parser("remove",help="Remove a row from the table")
-    remove_parser.add_argument('--table',help='Table name',default = 'leaves')
-    remove_parser.add_argument('employee_id',help = "Employee id ")
+    remove_parser.add_argument('employee_id',help = "Employee id ",type=int)
     remove_parser.add_argument('date',help = "Leave Date")
+
+    subparsers.add_parser('export',help='Export leave count of all employees')
 
     args = parser.parse_args()
     return args
@@ -269,7 +270,7 @@ def handle_update(args):
         conn = psycopg2.connect(dbname=args.dbname)
         cursor = conn.cursor()
         query = f"UPDATE {args.table} SET  employee_id = %s , date = %s, reason = %s  WHERE id = %s ;"
-        cursor.execute(query,(args.employee_id,args.new_date,args.new_reason,args.id))
+        cursor.execute(query,(args.new_employee_id,args.new_date,args.new_reason,args.id))
         conn.commit()
         logger.info("Table updated successfully")
     except HRException as e:
@@ -283,9 +284,45 @@ def handle_remove(args):
         cursor.execute(query,(args.employee_id,args.date))
         logger.debug(query)
         conn.commit()
-        logger.info("Row removed from table %s",args.table)
+        if cursor.rowcount == 0:
+            logger.error('No matching record found for the provided employee ID and date')
+        else:
+            logger.info("Row removed from table %s",args.table)
     except HRException as e:
         logger.error("Error :%s",e)
+
+def handle_export_all_employees_leave_count_data(args):
+    try:
+        conn = psycopg2.connect(dbname=args.dbname)
+        cursor = conn.cursor()
+        query = """
+            SELECT e.id, e.fname, e.lname, d.num_of_leaves, COUNT(l.employee_id) AS leaves_taken
+            FROM employees e
+            JOIN designation d ON d.designation_name = e.designation
+            LEFT JOIN leaves l ON e.id = l.employee_id
+            GROUP BY e.id, d.num_of_leaves
+            ORDER BY e.id;
+        """
+        cursor.execute(query)
+        all_leave_data = cursor.fetchall()
+        filename = "all_employees_leave_data.csv"
+        with open(filename, 'w', newline='') as csvfile:
+            fieldnames = ['Employee ID', 'First Name', 'Last Name', 'Total Leaves', 'Leaves Taken', 'Leaves Remaining']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for employee_id, fname, lname, total_leaves, leaves_taken in all_leave_data:
+                leaves_remaining = total_leaves - leaves_taken
+                writer.writerow({
+                    'Employee ID': employee_id,
+                    'First Name': fname,
+                    'Last Name': lname,
+                    'Total Leaves': total_leaves,
+                    'Leaves Taken': leaves_taken,
+                    'Leaves Remaining': leaves_remaining
+                })
+        logger.info("All employees leave data exported to %s",filename)
+    except HRException as e:
+        logger.error("Error : %s",e)
 
 def main():
     try:
@@ -299,7 +336,8 @@ def main():
                 "leave_count" : handle_leave_count,
                 "delete" : handle_delete,
                 "update" : handle_update,
-                "remove" : handle_remove}
+                "remove" : handle_remove,
+                "export" : handle_export_all_employees_leave_count_data}
         commands[args.subcommand](args)
     except HRException as e:
         logger.error("Program aborted, %s", e)
