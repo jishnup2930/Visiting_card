@@ -54,10 +54,10 @@ def parse_args():
 
     update_parser = subparsers.add_parser('update',help="Edit table")
     update_parser.add_argument ('-t','--table',help = 'Table name',default='leaves')
-    update_parser.add_argument('new_date',help = "Update leave Date")
-    update_parser.add_argument('new_reason',help = "Update reason of leave")
-    update_parser.add_argument('employee_id',help = "Employee id ")
     update_parser.add_argument('id',help="ID number of row")
+    update_parser.add_argument('new_date',help = "Update leave Date")   
+    update_parser.add_argument('employee_id',help = "Employee id ")
+    update_parser.add_argument('new_reason',help = "Update reason of leave")
 
     remove_parser = subparsers.add_parser("remove",help="Remove a row from the table")
     remove_parser.add_argument('--table',help='Table name',default = 'leaves')
@@ -276,19 +276,19 @@ def main():
     try:
         args = parse_args()
         init_logger(args.v)
-        commands = {"initdb" : handle_initdb,
-               "load" : handle_load,
-               "query" : handle_query,
-               "leave" : handle_leave,
-               "leave_count" : handle_leave_count,
-               "delete" : handle_delete,
-               "update" : handle_update,
-               "remove" : handle_remove}
+        commands = {
+                "initdb" : handle_initdb,
+                "load" : handle_load,
+                "query" : handle_query,
+                "leave" : handle_leave,
+                "leave_count" : handle_leave_count,
+                "delete" : handle_delete,
+                "update" : handle_update,
+                "remove" : handle_remove}
         commands[args.subcommand](args)
     except HRException as e:
         logger.error("Program aborted, %s", e)
         sys.exit(-1)
-    
 
 if __name__ == "__main__":
     main()
