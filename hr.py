@@ -1,6 +1,5 @@
 import argparse
 import csv
-
 import logging
 import os
 import requests
@@ -75,24 +74,6 @@ def parse_args():
 
     args = parser.parse_args()
     return args
-
-# def generate_one_vcard(lname, fname, designation, email, phone):
-#     vcard = f"""
-#             BEGIN:VCARD
-#             VERSION:2.1
-#             N:{lname};{fname}
-#             FN:{fname} {lname}
-#             ORG:Authors, Inc.
-#             TITLE:{designation}
-#             TEL;WORK;VOICE:{phone}
-#             ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
-#             EMAIL;PREF;INTERNET:{email}
-#             REV:20150922T195243Z
-#             END:VCARD"""
-#     return vcard
-
-# def generate_one_qrcode(name, fname, designation, email, phone):    
-#     return requests.get (f'https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl={name, fname, designation, email, phone}').content
 
 def handle_initdb(args):
     with open("sql/init.sql") as f:
@@ -254,7 +235,7 @@ def handle_leave_count(args):
                         'Leaves Taken': leaves_taken if leaves_data else 0,
                         'Leaves Remaining': leaves_remaining if leaves_data else leaves_remaining
                     })
-                logger.info(f"Data exported to {filename}")
+                logger.info("Data exported to %s",filename)
             else:
                 logger.info("Employee ID is out of range for export")
     except HRException as e:
