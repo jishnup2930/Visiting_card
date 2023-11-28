@@ -1,24 +1,22 @@
-Title : HR Management System
-Author : Jishnu
-Date : 14/11/2023
+HR Management System
+Author: Jishnu
+Date: 14/11/2023
 
-OVERVIEW
+Overview
 
-This HR Management System is a command-line tool built in Python, 
-designed to manage employee data and leave records in a database.
-It offers functionalities such as importing employee data from CSV files,
-querying employee information, managing leave status, and performing table operations like deletion, 
-updates, and removals.
+The HR Management System is a Python-based command-line tool designed to efficiently manage 
+employee data and leave records within a database. It offers a range of functionalities including 
+importing employee data from CSV files, querying employee information, leave status management, 
+and table operations such as deletion, updates, and removals.
 
+Input
 
-INPUT:
+- CSV File Format: Each row in the CSV file should contain the following columns:
+    firstname, lastname, designation, email, phonenumber
 
-Csv_file: Each row in the csv_file should contains the  following columns (sample csv file in folder sample data)
+- Model of vCard: Sample vCard file structure provided for reference.
 
-        firstname, lastname, designation, email, phonenumber
-
-
-Model of vcard         
+      Model of vcard         
 
       * This is a sample vcard file
         
@@ -36,94 +34,72 @@ Model of vcard
 
         * The qr code contains this data
 
+- Objective: Specifies key functions and their objectives within the system.
 
+Objective
 
-OBJECTIVE:
+handle_initdb: Initializes the SQL database.
+handle_import: Loads a CSV file into the database table.
+generate_one_vcard: Generates a single vCard.
+generate_one_qrcode: Generates a single QR code and saves it into a subdirectory named qr_code.
+handle_query: Fetches data from the database.
+handle_leave: Adds leave information into the leaves table.
+handle_leave_count: Retrieves the remaining leave count of an employee. Option to export as a CSV file.
+handle_delete: Deletes a specific table.
+handle_update: Updates the table with specific entries.
+handle_remove: Removes a row from a table.
+handle_export_all_employees_leave_count_data: Exports leave count details of all
+  employees into a file named all_employees_leave_data.
+generate_vcard_and_qrcode_for_all_employees : Exports all employees v_cards and  QR codes(optional)
+  into subdirectories named 'vcards' and 'qr_code', respectively
 
-The 'handle_initdb' function initialize a sql database
+Usage
 
-The function 'handle_import' function load a csv file in to table
+initdb: Initializes the database.
+  python hr.py initdb
 
-The function 'generate_one_vcard' create one vcard
- 
-The function 'generate_one_qrcode' generate one qr code and save into a subdirectory qr_code
+import: Imports employee data from a CSV file.
+  python hr.py import employees.csv
 
-The function 'handle_query' fetch the data from database (-c --vacrd,-q --qrcode )
-  -QR code save in a subdirectory called qr_code
+query: Retrieves information for a single employee.
+  python hr.py query <employee_id>
+  python hr.py query <employee_id> -c
+  python hr.py query <employee_id> -q
 
-The function 'handle_leave' to add leave into leaves table
- 
-The function 'handle_leave_count' get the leave remaining of a employee(-e = export as a csv file)
-  -The exporting csv file save in a subdirectory called csv_file
- 
-The function 'handle_delete' delete a table
+leave: Updates leave status for an employee.
+  python hr.py leave <employee_id> <date> <reason>
 
-The function 'handle_update' update the table 
+leave_count: Checks the remaining leave count for an employee.
+  python hr.py leave_count <employee_id>
+  python hr.py leave_count <employee_id> -e
+  
+delete: Deletes data in a specific table.
+  python hr.py delete
 
-The function 'handle_remove'  remove row in a table
+update: Edits a table (updates specific entries).
+  python hr.py update <id> <new_date> <new_employee_id>  <new_reason> 
 
-The function 'handle_export_all_employees_leave_count_data  export leave count details of all employees into
-    a file all_employees_leave_data
+remove: Removes a row from a table.
+  python hr.py remove <employee_id> <date>
 
+export: Exports all employees' leave count data.
+  python hr.py export
 
-USAGE
+card: Generate and exports all employees vacrd and QR code
+  python hr.py card
+  python hr.py card -q
 
- - initdb: Initialize the database.
-           python hr.py initdb
+Example
 
- - import: Import employee data into the database from a CSV file.
-            python hr.py load filename.csv
-
- - query: Retrieve information for a single employee.
-            python hr.py query 
- - query -c : Retrieve visiting card for a single employee
-            python hr.py query -c
-
- -  query -q : Retrieve  QR code for a single employee
-            python hr.py query -q
-                
- - leave: Update leave status for an employee.
-            python hr.py leave <id> <date> <reason>
-
- - leave_count: Check the remaining leave count for an employee.
-            python hr.py leave_count <id>
-
- - leave_count -e : Export leave count data as csv_file
-            python hr.py leave_count <id> -e
-
- - delete: Delete data in a specific table.
-            python hr.py delete
-
- - update: Edit a table (update specific entries).
-            python hr.py update <new_employee_id> <new_date> <new reason> <id>
-
- - remove: Remove a row from a table
-            python hr.py  remove <employee_id> <date>
-
- - export : Export all employees leave count data
-            python hr.py export
-
-
-EXAMPLE
-      python hr.py initdb
-
-      python hr.py import employees.csv
-
-      python hr.py query 123 -c -q
-      
-      python hr.py leave 123 '2023-11-22' 'Vacation'
-      
-      python hr.py leave_count 123
-
-      python hr.py leave_count 123  -e (Date export as a csv file)
-      
-      python hr.py delete leaves
-      
-      python hr.py update 123  '2023-11-23' 'Sick leave' 1
-      
-      python hr.py remove 123 '2023-11-22'
-
-      python hr.py export 
-
-
-
+  python hr.py initdb
+  python hr.py import employees.csv
+  python hr.py query 123 -c -q
+  python hr.py leave 123 '2023-11-22' 'Vacation'
+  python hr.py leave_count 123
+  python hr.py leave_count 123 -e (Export data as a CSV file)
+  python hr.py delete leaves
+  python hr.py update 123 '2023-11-23' 'Sick leave' 1
+  python hr.py remove 123 '2023-11-22'
+  python hr.py export
+  python hr.py card 
+  python hr.py card -q
