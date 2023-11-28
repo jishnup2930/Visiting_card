@@ -1,10 +1,12 @@
 import argparse
 import csv
+
 import logging
 import os
 import requests
 import sys
 
+from datetime import datetime
 import psycopg2
 from psycopg2.extensions import AsIs
 
@@ -44,10 +46,10 @@ def parse_args():
     query_parser.add_argument("-c",'--vcard', help="Generate vcard for employee",action="store_true", default=False)
     query_parser.add_argument('-q','--qrcode',help='Generate QR code',default=False,action='store_true')
 
-    add_parser = subparsers.add_parser('leave',help="Update leave status")
+    add_parser = subparsers.add_parser('leave',help="Add leave status of a employee")
     add_parser.add_argument('employee_id',help = "Employee id ",type=int)
-    add_parser.add_argument('date',help = "Leave Date")
-    add_parser.add_argument('reason',help = "Reason of leave")
+    add_parser.add_argument('-d','--date',help = "Leave Date [YYYY-MM-DD]",default=datetime.today().strftime('%Y-%m-%d'))
+    add_parser.add_argument('-r','--reason',help = "Reason of leave",default="Sick leave")
 
     count_parser = subparsers.add_parser('leave_count', help="Check remaining leave count of a employee")
     count_parser.add_argument('employee_id',help = "Employee id ",type=int)
@@ -58,9 +60,9 @@ def parse_args():
 
     update_parser = subparsers.add_parser('update',help="Edit table")
     update_parser.add_argument('id',help="ID number of row")
-    update_parser.add_argument('new_date',help = "Update leave Date")   
+    update_parser.add_argument('new_date',help = "Update leave Date [YYYY-MM-DD]")   
     update_parser.add_argument('new_employee_id',help = "Employee id ",type=int)
-    update_parser.add_argument('new_reason',help = "Update reason of leave")
+    update_parser.add_argument('new_reason',help = "Update reason of leave",type=str)
 
     remove_parser = subparsers.add_parser("remove",help="Remove a row from the table")
     remove_parser.add_argument('employee_id',help = "Employee id ",type=int)
@@ -70,7 +72,6 @@ def parse_args():
 
     card_parser= subparsers.add_parser('card',help="Generate vcard and qr code (optional) for all employees")
     card_parser.add_argument('-q','--qrcode',help="Generate qr code for all employees",action = 'store_true',default=False)
-
 
     args = parser.parse_args()
     return args
