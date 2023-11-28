@@ -76,23 +76,23 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def generate_one_vcard(lname, fname, designation, email, phone):
-    vcard = f"""
-            BEGIN:VCARD
-            VERSION:2.1
-            N:{lname};{fname}
-            FN:{fname} {lname}
-            ORG:Authors, Inc.
-            TITLE:{designation}
-            TEL;WORK;VOICE:{phone}
-            ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
-            EMAIL;PREF;INTERNET:{email}
-            REV:20150922T195243Z
-            END:VCARD"""
-    return vcard
+# def generate_one_vcard(lname, fname, designation, email, phone):
+#     vcard = f"""
+#             BEGIN:VCARD
+#             VERSION:2.1
+#             N:{lname};{fname}
+#             FN:{fname} {lname}
+#             ORG:Authors, Inc.
+#             TITLE:{designation}
+#             TEL;WORK;VOICE:{phone}
+#             ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
+#             EMAIL;PREF;INTERNET:{email}
+#             REV:20150922T195243Z
+#             END:VCARD"""
+#     return vcard
 
-def generate_one_qrcode(name, fname, designation, email, phone):    
-    return requests.get (f'https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl={name, fname, designation, email, phone}').content
+# def generate_one_qrcode(name, fname, designation, email, phone):    
+#     return requests.get (f'https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl={name, fname, designation, email, phone}').content
 
 def handle_initdb(args):
     with open("sql/init.sql") as f:
@@ -120,7 +120,7 @@ def handle_import(args):
             con.commit()
             logger.info("Data imported successfully")
     except HRException as e:
-        logger.error('Error: %s',e)
+        logger.error('Error importing file: %s',e)
 
 def handle_query(args):
     try:
@@ -152,11 +152,11 @@ def handle_query(args):
                     os.mkdir('qr_code')
                 with open(os.path.join('qr_code', qr_filename), 'wb') as file:
                     file.write(QR)
-                    logger.info("QR code generated successfully")
+                    logger.info("QR code generated and saved into 'qrcode' with file name %s",qr_filename)
             con.close()
             logger.info("Data generated successfully")
     except HRException as e:
-        logger.debug("Error : %s",e)
+        logger.debug("Error generating data : %s",e)
 
 def handle_leave(args):
     try:
@@ -269,7 +269,7 @@ def handle_delete(args):
         conn.commit()  
         logger.info ("Data in the table %s deleted successfully",args.tablename) 
     except HRException as e:
-        logger.error('Error: %s',e) 
+        logger.error('Error truncating table :%s',e) 
 
 def handle_update(args):
     try:
@@ -280,7 +280,7 @@ def handle_update(args):
         conn.commit()
         logger.info("Table updated successfully")
     except HRException as e:
-        logger.error("Error : %s",e)
+        logger.error("Error updating table : %s",e)
 
 def handle_remove(args):
     try:
@@ -295,7 +295,7 @@ def handle_remove(args):
         else:
             logger.info("Row removed from table %s",args.table)
     except HRException as e:
-        logger.error("Error :%s",e)
+        logger.error("Error removing row :%s",e)
 
 def handle_export_all_employees_leave_count_data(args):
     try:
@@ -328,39 +328,60 @@ def handle_export_all_employees_leave_count_data(args):
                 })
         logger.info("All employees leave data exported to %s",filename)
     except HRException as e:
-        logger.error("Error : %s",e)
+        logger.error("Error exporting data : %s",e)
+
+def generate_one_vcard(lname, fname, designation, email, phone):
+    vcard = f"""
+            BEGIN:VCARD
+            VERSION:2.1
+            N:{lname};{fname}
+            FN:{fname} {lname}
+            ORG:Authors, Inc.
+            TITLE:{designation}
+            TEL;WORK;VOICE:{phone}
+            ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
+            EMAIL;PREF;INTERNET:{email}
+            REV:20150922T195243Z
+            END:VCARD"""
+    return vcard
+
+def generate_one_qrcode(name, fname, designation, email, phone):    
+    return requests.get (f'https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl={name, fname, designation, email, phone}').content
 
 def generate_vcard_and_qrcode_for_all_employees(args):
     if not os.path.exists('vcards'):
         os.mkdir('vcards')
-    con = psycopg2.connect(dbname=args.dbname)
-    cur = con.cursor()
-    query = "SELECT fname, lname, designation, email, phone from employees ;"
-    cur.execute(query)
-    data = cur.fetchall()
-    
-    count = 0
-    for fname, lname, designation, email, phone  in data:
-        count += 1
-        vcard_content = generate_one_vcard(fname, lname, designation, email, phone)
-        vcard_filename = f'{fname}{lname}.vcf'
-        with open(os.path.join('vcards', vcard_filename), 'w') as f:
-            f.write(vcard_content)
-            logger.debug("%d Generated vcard for %s %s  ", count, fname ,lname)
-    logger.info("VCard generated successfully")
-
-    if args.qrcode:
-        logger.info("Started QR code generation,it will take some time. Please wait..")
-        if not os.path.exists('qr_code'):
-            os.mkdir('qr_code')
+    try:
+        con = psycopg2.connect(dbname=args.dbname)
+        cur = con.cursor()
+        query = "SELECT fname, lname, designation, email, phone from employees ;"
+        cur.execute(query)
+        data = cur.fetchall()
+        
         count = 0
         for fname, lname, designation, email, phone  in data:
             count += 1
-            qr_filename = f'{fname}{lname}.qr.png'
-            with open(os.path.join('qr_code', qr_filename), 'wb') as file:
-                file.write(generate_one_qrcode(fname, lname, designation, email, phone))
-                logger.debug("%d Generated QR code for %s %s", count, fname, lname)
-        logger.info("QR codes generated successfully")
+            vcard_content = generate_one_vcard(fname, lname, designation, email, phone)
+            vcard_filename = f'{fname}_{lname}.vcf'
+            with open(os.path.join('vcards', vcard_filename), 'w') as f:
+                f.write(vcard_content)
+                logger.debug("%d Generated vcard for %s %s  ", count, fname ,lname)
+            logger.info("VCard generated and saved into 'vcards' folder with file name %s", vcard_filename)
+
+        if args.qrcode:
+            logger.info("Started QR code generation, It will take some time. Please wait..")
+            if not os.path.exists('qr_code'):
+                os.mkdir('qr_code')
+            count = 0
+            for fname, lname, designation, email, phone  in data:
+                count += 1
+                qr_filename = f'{fname}_{lname}.qr.png'
+                with open(os.path.join('qr_code', qr_filename), 'wb') as file:
+                    file.write(generate_one_qrcode(fname, lname, designation, email, phone))
+                    logger.debug("%d Generated QR code for %s %s", count, fname, lname)
+                    logger.info("QR code generated and saved into 'qrcode' with file name %s",qr_filename)
+    except HRException as e:
+        logger.error("Error generating cards %s",e)
 
 def main():
     try:
