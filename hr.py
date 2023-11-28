@@ -2,10 +2,11 @@ import argparse
 import csv
 import logging
 import os
-import psycopg2
-from psycopg2.extensions import AsIs
 import requests
 import sys
+
+import psycopg2
+from psycopg2.extensions import AsIs
 
 class HRException(Exception): pass
 
@@ -66,6 +67,10 @@ def parse_args():
     remove_parser.add_argument('date',help = "Leave Date")
 
     subparsers.add_parser('export',help='Export leave count of all employees')
+
+    card_parser= subparsers.add_parser('card',help="Generate vcard and qr code (optional) for all employees")
+    card_parser.add_argument('-q','--qrcode',help="Generate qr code for all employees",action = 'store_true',default=False)
+
 
     args = parser.parse_args()
     return args
@@ -324,6 +329,38 @@ def handle_export_all_employees_leave_count_data(args):
     except HRException as e:
         logger.error("Error : %s",e)
 
+def generate_vcard_and_qrcode_for_all_employees(args):
+    if not os.path.exists('vcards'):
+        os.mkdir('vcards')
+    con = psycopg2.connect(dbname=args.dbname)
+    cur = con.cursor()
+    query = "SELECT fname, lname, designation, email, phone from employees ;"
+    cur.execute(query)
+    data = cur.fetchall()
+    
+    count = 0
+    for fname, lname, designation, email, phone  in data:
+        count += 1
+        vcard_content = generate_one_vcard(fname, lname, designation, email, phone)
+        vcard_filename = f'{fname}{lname}.vcf'
+        with open(os.path.join('vcards', vcard_filename), 'w') as f:
+            f.write(vcard_content)
+            logger.debug("%d Generated vcard for %s %s  ", count, fname ,lname)
+    logger.info("VCard generated successfully")
+
+    if args.qrcode:
+        logger.info("Started QR code generation,it will take some time. Please wait..")
+        if not os.path.exists('qr_code'):
+            os.mkdir('qr_code')
+        count = 0
+        for fname, lname, designation, email, phone  in data:
+            count += 1
+            qr_filename = f'{fname}{lname}.qr.png'
+            with open(os.path.join('qr_code', qr_filename), 'wb') as file:
+                file.write(generate_one_qrcode(fname, lname, designation, email, phone))
+                logger.debug("%d Generated QR code for %s %s", count, fname, lname)
+        logger.info("QR codes generated successfully")
+
 def main():
     try:
         args = parse_args()
@@ -337,7 +374,8 @@ def main():
                 "delete" : handle_delete,
                 "update" : handle_update,
                 "remove" : handle_remove,
-                "export" : handle_export_all_employees_leave_count_data}
+                "export" : handle_export_all_employees_leave_count_data,
+                "card":generate_vcard_and_qrcode_for_all_employees}
         commands[args.subcommand](args)
     except HRException as e:
         logger.error("Program aborted, %s", e)
