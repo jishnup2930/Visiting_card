@@ -2,12 +2,13 @@ import argparse
 import csv
 import logging
 import os
-import requests
 import sys
-
 from datetime import datetime
+
 import psycopg2
 from psycopg2.extensions import AsIs
+import requests
+
 
 class HRException(Exception): pass
 
@@ -163,8 +164,8 @@ def handle_leave(args):
                 cursor.execute(sql, (args.employee_id, args.date, args.reason))
                 conn.commit()
                 logger.info("Data inserted into leaves table successfully")
-    except HRException as e:
-        logger.error("Error updating data:%s",e)
+    except psycopg2.errors.UniqueViolation as e:
+        logger.error("Duplicate Entry: Employee ID %s with Date %s already exists in the table", args.employee_id, args.date)
 
 def handle_leave_count(args):
     with open("sql/leave_count.sql") as f:
