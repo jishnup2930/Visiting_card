@@ -8,6 +8,12 @@ from datetime import datetime
 import psycopg2
 from psycopg2.extensions import AsIs
 import requests
+import sqlalchemy as sa
+from sqlalchemy.sql import func
+
+
+
+import db
 
 
 class HRException(Exception): pass
@@ -77,68 +83,90 @@ def parse_args():
     return args
 
 def handle_initdb(args):
-    with open("sql/init.sql") as f:
-        sql = f.read()
-        logger.debug(sql)
-    try:
-        con = psycopg2.connect(dbname=args.dbname)
-        cur = con.cursor()
-        cur.execute(sql)
-        con.commit()
-        logger.info("Tables created successfully")
-    except psycopg2.OperationalError as e:
-        raise HRException(f"Database '{args.dbname}' doesn't exist:{e}")
+    db_uri = f"postgresql:///{args.dbname}"
+    db.create_all(db_uri)
+    session = db.get_session(db_uri)
+    d1 = db.Designation(title="Staff Engineer", max_leaves=20)
+    d2 = db.Designation(title="Senior Engineer", max_leaves=18)
+    d3 = db.Designation(title="Junior Engineer",max_leaves = 12)
+    d4 = db.Designation(title="Tech. Lead",max_leaves = 12)
+    d5 = db.Designation(title="Project Manager",max_leaves = 15)
+    session.add(d1)
+    session.add(d2)
+    session.add(d3)
+    session.add(d4)
+    session.add(d5)
+    session.commit()
 
 def handle_import(args):
-    try:
-        con = psycopg2.connect(dbname=args.dbname)
-        cur = con.cursor()
-        with open(args.employees_file) as f:
-            reader = csv.reader(f)
-            for lname, fname, designation, email, phone in reader:
-                logger.debug("Inserting %s", email)
-                query = "insert into employees(lname, fname, designation, email, phone) values (%s, %s, %s, %s, %s)"
-                cur.execute(query, (lname, fname, designation, email, phone))
-            con.commit()
-            logger.info("Data imported successfully")
-    except HRException as e:
-        logger.error('Error importing file: %s',e)
+    db_uri = f"postgresql:///{args.dbname}"
+    session = db.get_session(db_uri)
+
+    with open(args.employees_file) as f:
+        reader = csv.reader(f)
+        
+        for lname, fname, title, email, phone in reader:
+            
+            q = sa.select(db.Designation).where(db.Designation.title==title)
+            designation = session.execute(q).scalar_one()
+            
+            logger.debug("Inserting %s", email)
+            employee = db.Employee(lname=lname,
+                                   fname=fname,
+                                   title=designation,
+                                   email=email,
+                                   phone=phone)
+            session.add(employee)
+        session.commit()
+        logger.info("Data imported successfully")
 
 def handle_query(args):
     try:
-        con = psycopg2.connect(dbname=args.dbname)
-        cur = con.cursor()
-        cur.execute("SELECT COUNT(id) FROM employees;")
-        max_employees = cur.fetchone()[0]
-        if args.employee_id > max_employees:
-            print(" \n    Employee ID out of range\n")
-        else:
-            query = "SELECT fname, lname, designation, email, phone from employees where id = %s"
-            cur.execute(query, (args.employee_id,))
-            fname, lname, designation, email, phone = cur.fetchone()
+        db_uri = f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
 
-            print (f"""
-        Name        : {fname} {lname}
-        Designation : {designation}
-        Email       : {email}
-        Phone       : {phone}\n""")
-            
-            vcard = generate_one_vcard(lname, fname, designation, email, phone)
-            QR = generate_one_qrcode(lname, fname, designation, email, phone)
-            if (args.vcard):
-                print (f"{vcard}\n")
+        total_employees = session.query(func.count(db.Employee.id)).scalar()
+        # print(total_employees)
+        if args.employee_id > total_employees:
+            print("\n    Employee ID out of range\n")
+        else:
+            # Fetch employee details by ID
+            employee_query = sa.select(db.Employee).filter(db.Employee.id == args.employee_id)
+            result = session.execute(employee_query).fetchone()
+            print(result)
+            if result:
+                fname = result[0].fname
+                lname=result[0].lname
+                designation = result[0].title
+                email = result[0].email
+                phone = result[0].phone
+                print(f"""
+            Name        : {fname} {lname}
+            Designation : {designation}
+            Email       : {email}
+            Phone       : {phone}\n""")
                 
-            if (args.qrcode):
-                qr_filename = f'{fname}_{lname}.qr.png'
-                if not os.path.exists('qr_code'):
-                    os.mkdir('qr_code')
-                with open(os.path.join('qr_code', qr_filename), 'wb') as file:
-                    file.write(QR)
-                    logger.info("QR code generated and saved into 'qrcode' with file name %s",qr_filename)
-            con.close()
-            logger.info("Data generated successfully")
-    except HRException as e:
-        logger.debug("Error generating data : %s",e)
+                # Generate vcard and QR code (assuming functions are defined)
+                vcard = generate_one_vcard(lname, fname, designation, email, phone)
+                QR = generate_one_qrcode(lname, fname, designation, email, phone)
+                
+                if args.vcard:
+                    print(f"{vcard}\n")
+                    
+                if args.qrcode:
+                    qr_filename = f'{fname}_{lname}.qr.png'
+                    if not os.path.exists('qr_code'):
+                        os.mkdir('qr_code')
+                    with open(os.path.join('qr_code', qr_filename), 'wb') as file:
+                        file.write(QR)
+                        logger.info("QR code generated and saved into 'qrcode' with file name %s", qr_filename)
+                logger.info("Data generated successfully")
+            else:
+                print("\n    Employee not found\n")
+
+        session.close()
+    except Exception as e:
+        logger.debug("Error generating data: %s", e)
 
 def handle_leave(args):
     try:
