@@ -286,24 +286,29 @@ def handle_remove(args):
 
 def handle_export_all_employees_leave_count_data(args):
     try:
-        conn = psycopg2.connect(dbname=args.dbname)
-        cursor = conn.cursor()
-        query = """
-            SELECT e.id, e.fname, e.lname, d.num_of_leaves, COUNT(l.employee_id) AS leaves_taken
-            FROM employees e
-            JOIN designation d ON d.designation_name = e.designation
-            LEFT JOIN leaves l ON e.id = l.employee_id
-            GROUP BY e.id, d.num_of_leaves
-            ORDER BY e.id;
-        """
-        cursor.execute(query)
-        all_leave_data = cursor.fetchall()
+        db_uri = f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
+        query = (
+            sa.select(
+                db.Employee.id,
+                db.Employee.fname,
+                db.Employee.lname,
+                db.Designation.max_leaves,
+                sa.func.count(db.Leave.employee_id).label("leaves_taken")
+            )
+            .join(db.Designation, db.Designation.id == db.Employee.designation_id)
+            .outerjoin(db.Leave, db.Employee.id == db.Leave.employee_id)
+            .group_by(db.Employee.id, db.Designation.max_leaves)
+            .order_by(db.Employee.id)
+        )
+        all_leaves_data = session.execute(query).fetchall()
+
         filename = "all_employees_leave_data.csv"
         with open(filename, 'w', newline='') as csvfile:
             fieldnames = ['Employee ID', 'First Name', 'Last Name', 'Total Leaves', 'Leaves Taken', 'Leaves Remaining']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            for employee_id, fname, lname, total_leaves, leaves_taken in all_leave_data:
+            for employee_id, fname, lname, total_leaves, leaves_taken in all_leaves_data:
                 leaves_remaining = total_leaves - leaves_taken
                 writer.writerow({
                     'Employee ID': employee_id,
