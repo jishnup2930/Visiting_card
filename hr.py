@@ -5,8 +5,6 @@ import os
 import sys
 from datetime import datetime
 
-import psycopg2
-from psycopg2.extensions import AsIs
 import requests
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
@@ -63,7 +61,7 @@ def parse_args():
     delete_parser = subparsers.add_parser('delete',help='Delete data from table')
     delete_parser.add_argument('tablename',help='Name of the table to delete',action= 'store')
 
-    update_parser = subparsers.add_parser('update',help="Edit table")
+    update_parser = subparsers.add_parser('update',help="Edit a single row in the table")
     update_parser.add_argument('id',help="ID number of row")
     update_parser.add_argument('new_date',help = "Update leave Date [YYYY-MM-DD]")   
     update_parser.add_argument('new_employee_id',help = "Employee id ",type=int)
@@ -71,7 +69,7 @@ def parse_args():
 
     remove_parser = subparsers.add_parser("remove",help="Remove a row from the table")
     remove_parser.add_argument('employee_id',help = "Employee id ",type=int)
-    remove_parser.add_argument('date',help = "Leave Date")
+    remove_parser.add_argument('date',help = "Leave Date [YYYY-MM-DD]")
 
     subparsers.add_parser('export',help='Export leave count of all employees')
 
@@ -223,7 +221,7 @@ def handle_leave_count(args):
             Designation      : {designation}
             Total leaves     : {total_leaves}
             Leaves taken     : {leaves_taken}
-            Leaves remaining  : {leaves_remaining}
+            Leaves remaining : {leaves_remaining}
             \n""")
 
         if args.export :
@@ -276,16 +274,19 @@ def handle_update(args):
 
 def handle_remove(args):
     try:
-        conn = psycopg2.connect(dbname=args.dbname)
-        cursor = conn.cursor()
-        query = f"DELETE FROM {args.table} WHERE employee_id = %s AND date = %s;"
-        cursor.execute(query,(args.employee_id,args.date))
-        logger.debug(query)
-        conn.commit()
-        if cursor.rowcount == 0:
-            logger.error('No matching record found for the provided employee ID and date')
+        db_uri =f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
+        query = text(f"DELETE FROM {args.table} WHERE employee_id =:employee_id AND date = :date")
+        result = session.execute(query,{
+            'employee_id' :args.employee_id,
+            'date' : args.date
+        })
+        session.commit()
+        rows_affected = result.rowcount
+        if rows_affected > 0:
+            logger.info("Employee ID %d with date %s removed from table %s",args.employee_id,args.date,args.table)
         else:
-            logger.info("Row removed from table %s",args.table)
+            logger.info("No rows found to remove from table %s", args.table)
     except HRException as e:
         logger.error("Error removing row :%s",e)
 
