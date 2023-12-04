@@ -37,7 +37,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="HR management")
     parser.add_argument("--dbname", help="Name of database to use", default="hr")
     parser.add_argument("-v", help="Print detailed logging", action="store_true", default=False)
-    parser.add_argument('--table',help='Table name',default = 'leaves')
+    parser.add_argument('--table',help='Table name',default = 'hrms_leaves')
 
     subparsers = parser.add_subparsers(dest="subcommand",help='Subcommand')
 
@@ -260,11 +260,16 @@ def handle_delete(args):
 
 def handle_update(args):
     try:
-        conn = psycopg2.connect(dbname=args.dbname)
-        cursor = conn.cursor()
-        query = f"UPDATE {args.table} SET  employee_id = %s , date = %s, reason = %s  WHERE id = %s ;"
-        cursor.execute(query,(args.new_employee_id,args.new_date,args.new_reason,args.id))
-        conn.commit()
+        db_uri  = f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
+        query = text(f"UPDATE {args.table} SET employee_id = :employee_id, date = :date, reason = :reason WHERE id = :id")
+        session.execute(query, {
+            'employee_id': args.new_employee_id,
+            'date': args.new_date,
+            'reason': args.new_reason,
+            'id': args.id
+    })        
+        session.commit()
         logger.info("Table updated successfully")
     except HRException as e:
         logger.error("Error updating table : %s",e)
