@@ -124,76 +124,61 @@ def handle_query(args):
     try:
         db_uri = f"postgresql:///{args.dbname}"
         session = db.get_session(db_uri)
-
-        total_employees = session.query(func.count(db.Employee.id)).scalar()
-        # print(total_employees)
-        if args.employee_id > total_employees:
-            print("\n    Employee ID out of range\n")
+        employee_query = (
+            sa.select(db.Employee,db.Designation.title)
+        .where(db.Employee.id == args.employee_id,db.Designation.id==db.Employee.designation_id))
+        result = session.execute(employee_query).fetchone()
+        if result:
+            fname = result[0].fname
+            lname=result[0].lname
+            designation = result[1]
+            email = result[0].email
+            phone = result[0].phone
+            print(f"""
+        Name        : {fname} {lname}
+        Designation : {designation}
+        Email       : {email}
+        Phone       : {phone}\n""")
+            
+            vcard = generate_one_vcard(lname, fname, designation, email, phone)
+            QR = generate_one_qrcode(lname, fname, designation, email, phone)
+                
+            if args.vcard:
+                print(f"{vcard}\n")
+                
+            if args.qrcode:
+                qr_filename = f'{fname}_{lname}.qr.png'
+                if not os.path.exists('qr_code'):
+                    os.mkdir('qr_code')
+                with open(os.path.join('qr_code', qr_filename), 'wb') as file:
+                    file.write(QR)
+                    logger.info("QR code generated and saved into 'qrcode' with file name %s", qr_filename)
+            logger.info("Data generated successfully")
         else:
-            # Fetch employee details by ID
-            employee_query = sa.select(db.Employee).filter(db.Employee.id == args.employee_id)
-            result = session.execute(employee_query).fetchone()
-            print(result)
-            if result:
-                fname = result[0].fname
-                lname=result[0].lname
-                designation = result[0].title
-                email = result[0].email
-                phone = result[0].phone
-                print(f"""
-            Name        : {fname} {lname}
-            Designation : {designation}
-            Email       : {email}
-            Phone       : {phone}\n""")
-                
-                # Generate vcard and QR code (assuming functions are defined)
-                vcard = generate_one_vcard(lname, fname, designation, email, phone)
-                QR = generate_one_qrcode(lname, fname, designation, email, phone)
-                
-                if args.vcard:
-                    print(f"{vcard}\n")
-                    
-                if args.qrcode:
-                    qr_filename = f'{fname}_{lname}.qr.png'
-                    if not os.path.exists('qr_code'):
-                        os.mkdir('qr_code')
-                    with open(os.path.join('qr_code', qr_filename), 'wb') as file:
-                        file.write(QR)
-                        logger.info("QR code generated and saved into 'qrcode' with file name %s", qr_filename)
-                logger.info("Data generated successfully")
-            else:
-                print("\n    Employee not found\n")
-
-        session.close()
+            logger.error("Employee id %s not found in the table ",args.employee_id)
     except Exception as e:
-        logger.debug("Error generating data: %s", e)
+        logger.info("Error : %s",e)
 
 def handle_leave(args):
     try:
-        conn = psycopg2.connect(dbname=args.dbname)
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(id) FROM employees;")
-        max_employees = cursor.fetchone()[0]
-        if args.employee_id > max_employees:
-            print("\n     Employee ID out of range.\n")
-        else:    
-            cursor.execute("SELECT num_of_leaves FROM designation d JOIN employees e ON d.designation_name = e.designation WHERE e.id = %s;", (args.employee_id,))
-            total_leaves = cursor.fetchone()[0]
+        db_uri =f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
 
-            cursor.execute("SELECT COUNT(*) FROM leaves WHERE employee_id = %s;", (args.employee_id,))
-            leaves_taken = cursor.fetchone()[0]
-
-            if leaves_taken >= total_leaves:
-                print("\n     No leaves left for the employee.\n")
-            else:
-                with open("sql/leave_update.sql") as f:
-                    sql = f.read()
-                    logger.debug(sql)
-                cursor.execute(sql, (args.employee_id, args.date, args.reason))
-                conn.commit()
-                logger.info("Data inserted into leaves table successfully")
+        total_employees = session.query(func.count(db.Employee.id)).scalar()
+        if args.employee_id > total_employees:
+            print(f"\n     Employee ID {args.employee_id} is out of range.\n")
+        else:
+            query = sa.select([db.Designation.max_leaves]).join(db.Employee, db.Designation.employees ==db.Employee.title).where(db.Employee.id == args.employee_id)
+            leave_data = session.execute(query).fetchone()
+            print(leave_data)
+            # else:  
+                # leave = db.Leave(date=args.date, employee_id=args.employee_id, reason=args.reason)
+                # session.add(leave)
+                # session.commit()
+                # logger.info("Leave added")
     except psycopg2.errors.UniqueViolation as e:
         logger.error("Duplicate Entry: Employee ID %s with Date %s already exists in the table", args.employee_id, args.date)
+
 
 def handle_leave_count(args):
     with open("sql/leave_count.sql") as f:
