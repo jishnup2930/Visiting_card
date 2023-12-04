@@ -10,11 +10,9 @@ from psycopg2.extensions import AsIs
 import requests
 import sqlalchemy as sa
 from sqlalchemy.sql import func
-
-
+from sqlalchemy.exc import IntegrityError
 
 import db
-
 
 class HRException(Exception): pass
 
@@ -163,21 +161,19 @@ def handle_leave(args):
     try:
         db_uri =f"postgresql:///{args.dbname}"
         session = db.get_session(db_uri)
-
-        total_employees = session.query(func.count(db.Employee.id)).scalar()
-        if args.employee_id > total_employees:
-            print(f"\n     Employee ID {args.employee_id} is out of range.\n")
-        else:
-            query = sa.select([db.Designation.max_leaves]).join(db.Employee, db.Designation.employees ==db.Employee.title).where(db.Employee.id == args.employee_id)
-            leave_data = session.execute(query).fetchone()
-            print(leave_data)
-            # else:  
-                # leave = db.Leave(date=args.date, employee_id=args.employee_id, reason=args.reason)
-                # session.add(leave)
-                # session.commit()
-                # logger.info("Leave added")
-    except psycopg2.errors.UniqueViolation as e:
-        logger.error("Duplicate Entry: Employee ID %s with Date %s already exists in the table", args.employee_id, args.date)
+        query1 = sa.select(sa.func.count(db.Leave.employee_id)).where (db.Leave.employee_id == args.employee_id)
+        leave_taken=session.execute(query1).scalar()
+        query2 = sa.select(db.Designation.max_leaves).where(db.Designation.id == db.Employee.designation_id,db.Employee.id == args.employee_id)
+        total_leave = session.execute(query2).scalar()
+        if leave_taken >= total_leave:
+            logger.error("No leave left for employee ID %s",args.employee_id)
+        else:   
+            leave = db.Leave(date=args.date, employee_id=args.employee_id, reason=args.reason)
+            session.add(leave)
+            session.commit()
+            logger.info("Leave added for employee ID %s",args.employee_id)
+    except IntegrityError as e:
+        logger.error("Employee ID %s with Date %s already exists in the table",args.employee_id, args.date)
 
 
 def handle_leave_count(args):
