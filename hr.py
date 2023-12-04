@@ -9,8 +9,9 @@ import psycopg2
 from psycopg2.extensions import AsIs
 import requests
 import sqlalchemy as sa
-# from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
+
 
 import db
 
@@ -60,7 +61,7 @@ def parse_args():
     count_parser.add_argument("-e",'--export', help = "Export data as a csv file",action ='store_true',default = False)
 
     delete_parser = subparsers.add_parser('delete',help='Delete data from table')
-    delete_parser.add_argument('tablename',help='Delete data from table',action= 'store')
+    delete_parser.add_argument('tablename',help='Name of the table to delete',action= 'store')
 
     update_parser = subparsers.add_parser('update',help="Edit table")
     update_parser.add_argument('id',help="ID number of row")
@@ -175,7 +176,6 @@ def handle_leave(args):
     except IntegrityError:
         logger.error("Employee ID %s with Date %s already exists in the table",args.employee_id, args.date)
 
-
 def handle_leave_count(args):
     try:
         db_uri = f"postgresql:///{args.dbname}"
@@ -249,11 +249,11 @@ def handle_leave_count(args):
 
 def handle_delete(args):
     try:
-        conn = psycopg2.connect(dbname=args.dbname)
-        cursor = conn.cursor()
-        query = "TRUNCATE TABLE %s RESTART IDENTITY CASCADE"
-        cursor.execute(query,(AsIs(args.tablename),))
-        conn.commit()  
+        db_uri = f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
+        truncate_query = text(f"TRUNCATE TABLE {args.tablename} RESTART IDENTITY CASCADE")
+        session.execute(truncate_query)
+        session.commit() 
         logger.info ("Data in the table %s deleted successfully",args.tablename) 
     except HRException as e:
         logger.error('Error truncating table :%s',e) 
