@@ -9,7 +9,7 @@ import psycopg2
 from psycopg2.extensions import AsIs
 import requests
 import sqlalchemy as sa
-from sqlalchemy.sql import func
+# from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError
 
 import db
@@ -172,84 +172,80 @@ def handle_leave(args):
             session.add(leave)
             session.commit()
             logger.info("Leave added for employee ID %s",args.employee_id)
-    except IntegrityError as e:
+    except IntegrityError:
         logger.error("Employee ID %s with Date %s already exists in the table",args.employee_id, args.date)
 
 
 def handle_leave_count(args):
-    with open("sql/leave_count.sql") as f:
-        sql = f.read()
-        logger.debug(sql) 
     try:
-        conn = psycopg2.connect(dbname=args.dbname)
-        cursor = conn.cursor()
-        cursor.execute(sql, (args.employee_id,))
-        leaves_data = cursor.fetchone()
+        db_uri = f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
+        query = (
+            sa.select(db.Employee.fname,db.Employee.lname,db.Designation.title,db.Designation.max_leaves,sa.func.count(db.Leave.employee_id))
+            .where(db.Employee.id == args.employee_id,db.Employee.designation_id == db.Designation.id,db.Employee.id == db.Leave.employee_id) 
+            .group_by(db.Employee.id,db.Employee.fname,db.Employee.lname,db.Designation.title,db.Designation.max_leaves,db.Leave.employee_id)    
+        )
+        leaves_data = session.execute(query).fetchall()
 
-        if leaves_data is None:
-            query = """SELECT d.num_of_leaves AS NUMBER, e.fname, e.lname, d.designation_name 
-                        FROM designation d 
-                        JOIN employees e 
-                        ON d.designation_name = e.designation 
-                        WHERE e.id = %s; """
-            cursor.execute(query, (args.employee_id,))
-            data = cursor.fetchone()
-            if not data:
-                print("\n   Employee ID not found in the list\n")
-            else:
-                leaves_remaining = data[0]
-                firstname = data[1]
-                lastname = data[2]
-                leaves_taken = 0
-
-                print(f"""
-            Employee name    : {firstname} {lastname}
-            Employee id      : {args.employee_id}
-            Total leaves     : {leaves_remaining} 
-            Leaves taken     : {leaves_taken}
-            Leaves remaining : {leaves_remaining}
-            \n""")
-
-        else:
-            leaves_taken = leaves_data[0]
-            firstname = leaves_data[1]
-            lastname = leaves_data[2]
-            num_of_leaves = leaves_data[4]
-            leaves_remaining = num_of_leaves - leaves_taken
-
+        if leaves_data == []:
+            query = (
+            sa.select(db.Employee.fname,db.Employee.lname,db.Designation.title,db.Designation.max_leaves)
+            .where(db.Employee.id == args.employee_id,db.Employee.designation_id == db.Designation.id) 
+            .group_by(db.Employee.id,db.Employee.fname,db.Employee.lname,db.Designation.title,db.Designation.max_leaves)    
+        )
+            leaves_data = session.execute(query).fetchall()
+            first_name = leaves_data[0][0]
+            last_name = leaves_data[0][1]
+            designation = leaves_data[0][2]
+            total_leaves = leaves_data[0][3]
+            leaves_taken = 0
+            leaves_remaining =total_leaves - leaves_taken
+    
             print(f"""
-            Employee name    : {firstname} {lastname}
+            Employee name    : {first_name} {last_name}
             Employee id      : {args.employee_id}
-            Total leaves     : {num_of_leaves} 
+            Designation      : {designation}
+            Total leaves     : {total_leaves}
             Leaves taken     : {leaves_taken}
-            Leaves remaining : {leaves_remaining}
+            Leave remaining  : {leaves_remaining}
             \n""")
-
-        cursor.execute('SELECT COUNT(id) FROM employees;')
-        count = cursor.fetchone()[0]
+        else:
+            first_name = leaves_data[0][0]
+            last_name = leaves_data[0][1]
+            designation = leaves_data[0][2]
+            total_leaves = leaves_data[0][3]
+            leaves_taken = leaves_data[0][4]
+            leaves_remaining =total_leaves - leaves_taken
+    
+            print(f"""
+            Employee name    : {first_name} {last_name}
+            Employee id      : {args.employee_id}
+            Designation      : {designation}
+            Total leaves     : {total_leaves}
+            Leaves taken     : {leaves_taken}
+            Leaves remaining  : {leaves_remaining}
+            \n""")
 
         if args.export :
-            if args.employee_id <= count:      
-                if not os.path.exists('csv_file'):
-                    os.mkdir('csv_file')
-                filename = f"{args.employee_id}_leave_data.csv"
-                with open(os.path.join("csv_file", filename),'w') as csvfile:
-                    fieldnames = ['Employee ID', 'First Name', 'Last Name', 'Total Leaves', 'Leaves Taken', 'Leaves Remaining']
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    writer.writeheader()
-                    writer.writerow({
-                        'Employee ID': args.employee_id,
-                        'First Name': firstname,
-                        'Last Name': lastname,
-                        'Total Leaves': num_of_leaves if leaves_data else leaves_remaining,
-                        'Leaves Taken': leaves_taken if leaves_data else 0,
-                        'Leaves Remaining': leaves_remaining if leaves_data else leaves_remaining
-                    })
-                logger.info("Data exported to %s",filename)
-            else:
-                logger.info("Employee ID is out of range for export")
-    except HRException as e:
-        logger.error("Error fetching leave data: %s", e)
+            if not os.path.exists('csv_file'):
+                os.mkdir('csv_file')
+            filename = f"{args.employee_id}_leave_data.csv"
+            with open(os.path.join("csv_file", filename),'w') as csvfile:
+                fieldnames = ['Employee ID', 'First Name', 'Last Name', 'Total Leaves', 'Leaves Taken', 'Leaves Remaining']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow({
+                    'Employee ID': args.employee_id,
+                    'First Name': first_name,
+                    'Last Name': last_name,
+                    'Total Leaves': total_leaves if leaves_data else leaves_remaining,
+                    'Leaves Taken': leaves_taken if leaves_data else 0,
+                    'Leaves Remaining': leaves_remaining if leaves_data else leaves_remaining
+                })
+                logger.info("Data exported to 'csv_file' with file name %s",filename)
+        logger.info("Leave count data of employee ID %s fetched successfully",args.employee_id)
+    except IndexError as e:
+        logger.error("Employee ID %s out of range",args.employee_id)
 
 def handle_delete(args):
     try:
