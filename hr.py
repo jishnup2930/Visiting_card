@@ -173,7 +173,9 @@ def handle_leave(args):
             logger.info("Leave added for employee ID %s",args.employee_id)
     except IntegrityError:
         logger.error("Employee ID %s with Date %s already exists in the table",args.employee_id, args.date)
-
+    except HRException as e:
+        logger.error("Error occurred while processing leave: %s", e)
+        
 def handle_leave_count(args):
     try:
         db_uri = f"postgresql:///{args.dbname}"
