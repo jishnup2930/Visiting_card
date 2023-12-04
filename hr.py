@@ -339,12 +339,13 @@ def generate_vcard_and_qrcode_for_all_employees(args):
     if not os.path.exists('vcards'):
         os.mkdir('vcards')
     try:
-        con = psycopg2.connect(dbname=args.dbname)
-        cur = con.cursor()
-        query = "SELECT fname, lname, designation, email, phone from employees ;"
-        cur.execute(query)
-        data = cur.fetchall()
-        
+        db_uri = f"postgresql:///{args.dbname}"
+        session = db.get_session(db_uri)
+        query = (
+            sa.select(db.Employee.fname,db.Employee.lname,db.Employee.email,db.Employee.phone,db.Designation.title)
+            .where(db.Employee.designation_id == db.Designation.id)
+            )
+        data = session.execute(query).fetchall()
         count = 0
         for fname, lname, designation, email, phone  in data:
             count += 1
@@ -353,7 +354,7 @@ def generate_vcard_and_qrcode_for_all_employees(args):
             with open(os.path.join('vcards', vcard_filename), 'w') as f:
                 f.write(vcard_content)
                 logger.debug("%d Generated vcard for %s %s  ", count, fname ,lname)
-            logger.info("VCard generated and saved into 'vcards' folder with file name %s", vcard_filename)
+        logger.info("VCard generated and saved into the subdirectory 'vcards'  ")
 
         if args.qrcode:
             logger.info("Started QR code generation, It will take some time. Please wait..")
@@ -366,7 +367,7 @@ def generate_vcard_and_qrcode_for_all_employees(args):
                 with open(os.path.join('qr_code', qr_filename), 'wb') as file:
                     file.write(generate_one_qrcode(fname, lname, designation, email, phone))
                     logger.debug("%d Generated QR code for %s %s", count, fname, lname)
-                    logger.info("QR code generated and saved into 'qrcode' with file name %s",qr_filename)
+            logger.info("QR code generated and saved into the subdirectory 'qrcode'")
     except HRException as e:
         logger.error("Error generating cards %s",e)
 
