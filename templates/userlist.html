@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-4">
+        <h1>Employees list</h1>
+        <p>
+            <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+
+            <ol>
+                {% for u in users %}
+                    <li><a href="{{ url_for('employee_details', empid=u.id) }}">{{ u.fname }}</a></li>
+                {% endfor %}
+            </ol>
+        </p>
+    </div>
+    </div>
+{% endblock %}

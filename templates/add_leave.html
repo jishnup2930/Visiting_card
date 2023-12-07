@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1> Add leave for the employee </h1>
+    <form action="/employees" method="POST">
+        <label for="leave_date">Leave Date:</label>
+        <input type="date" id="leave_date" name="leave_date"><br><br>
+        
+        <label for="leave_reason">Reason:</label><br>
+        <textarea id="leave_reason" name="leave_reason" rows="4" cols="50"></textarea><br><br>
+
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}
