@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
 
-
 import db
+import web
 
 class HRException(Exception): pass
 
@@ -75,6 +75,8 @@ def parse_args():
 
     card_parser= subparsers.add_parser('card',help="Generate vcard and qr code (optional) for all employees")
     card_parser.add_argument('-q','--qrcode',help="Generate qr code for all employees",action = 'store_true',default=False)
+
+    subparsers.add_parser("web",help ="Start web server")
 
     args = parser.parse_args()
     return args
@@ -175,7 +177,7 @@ def handle_leave(args):
         logger.error("Employee ID %s with Date %s already exists in the table",args.employee_id, args.date)
     except HRException as e:
         logger.error("Error occurred while processing leave: %s", e)
-        
+
 def handle_leave_count(args):
     try:
         db_uri = f"postgresql:///{args.dbname}"
@@ -384,6 +386,11 @@ def generate_vcard_and_qrcode_for_all_employees(args):
     except HRException as e:
         logger.error("Error generating cards %s",e)
 
+def handle_web(args):
+    web.app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql:///{args.dbname}"
+    web.d.init_app(web.app)
+    web.app.run()
+
 def main():
     try:
         args = parse_args()
@@ -398,7 +405,8 @@ def main():
                 "update" : handle_update,
                 "remove" : handle_remove,
                 "export" : handle_export_all_employees_leave_count_data,
-                "card":generate_vcard_and_qrcode_for_all_employees}
+                "card":generate_vcard_and_qrcode_for_all_employees,
+                "web" : handle_web}
         commands[args.subcommand](args)
     except HRException as e:
         logger.error("Program aborted, %s", e)
