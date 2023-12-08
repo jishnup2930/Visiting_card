@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="container">
 <div class="row">
     <div class="col-4">
         <h1>Employees list</h1>
         <p>
-          <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+          <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}"></p>
 
             <ol>
                 {% for u in users %}
@@ -15,7 +16,6 @@
         </p>
     </div>
     <div class="col-8">
-    <div>
     <h1> {{user.fname}}  {{user.lname}}</h1>
     <h2> {{user.title.title}} </h2>
     <table>
@@ -54,7 +54,7 @@
 </div>
 <div>
     <h1> Add leave </h1>
-    <form action="/add_leave" method="POST">
+    <form action="{{url_for('add_leave',empid= user.id)}}" method="POST">
         <label for="leave_date">Leave Date:</label>
         <input type="date" id="leave_date" name="leave_date"><br><br>
         
