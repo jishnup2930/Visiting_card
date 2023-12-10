@@ -1,12 +1,13 @@
 import db
 import flask
 
-from flask import url_for, redirect
+from flask import url_for, redirect,flash
 from sqlalchemy.sql import func
 
 employees = []
 
 app = flask.Flask("hrms")
+app.secret_key= 'hrms'
 d = db.SQLAlchemy(model_class=db.HRDBBase)
 
 @app.route("/", methods=["GET", "POST"])
@@ -24,16 +25,6 @@ def employees():
     return flask.render_template("userlist.html", users = users)
 
 
-# @app.route("/employees/<int:empid>")
-# def employee_details(empid):
-#     query_1 = d.select(db.Employee).order_by(db.Employee.fname)
-#     users = d.session.execute(query_1).scalars()
-#     query_2 = d.select(db.Employee).where(db.Employee.id == empid)
-#     user = d.session.execute(query_2).scalar()
-#     leave_q =d.select(func.count(db.Employee.id)).join(db.Leave,db.Employee.id == db.Leave.employee_id).filter(db.Employee.id==empid)
-#     leave =d.session.execute(leave_q).scalar()
-#     return flask.render_template("userdetail.html", user = user,users=users,leave=leave)
-
 @app.route("/employees/<int:empid>")
 def employee_details(empid):
     query = d.select(db.Employee).where(db.Employee.id == empid)
@@ -50,7 +41,6 @@ def employee_details(empid):
            "leave":leave}
     return flask.jsonify(ret)
 
-
 @app.route("/add_leave/<int:empid>", methods=["POST"])
 def add_leave(empid):
     if flask.request.method == "POST":
@@ -59,7 +49,15 @@ def add_leave(empid):
         leave = db.Leave(date=leave_date, employee_id=empid, reason=leave_reason)
         d.session.add(leave)
         d.session.commit()
-        return redirect(url_for("employee_details", empid=empid))
+        leave_q =d.select(func.count(db.Employee.id)).join(db.Leave,db.Employee.id == db.Leave.employee_id).filter(db.Employee.id==empid)
+        leave =d.session.execute(leave_q).scalar()
+        query = d.select(db.Designation.max_leaves).where(db.Employee.id == empid)
+        max_leave = d.session.execute(query).scalar()
+        if leave >= max_leave:
+            flash('No leave left for this employee')
+        else:
+            flash('Leave added successfully')
+        return redirect(url_for("employees")) 
     
 @app.route("/about")
 def about():
