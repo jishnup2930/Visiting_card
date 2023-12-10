@@ -59,7 +59,7 @@ def add_leave(empid):
         leave = db.Leave(date=leave_date, employee_id=empid, reason=leave_reason)
         d.session.add(leave)
         d.session.commit()
-        return flask.redirect(url_for("employee_details", empid=empid))
+        return redirect(url_for("employee_details", empid=empid))
     
 @app.route("/about")
 def about():
