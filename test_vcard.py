@@ -1,6 +1,6 @@
-import os
+import mock
 import requests
-from hr import generate_one_vcard,generate_one_qrcode
+from hr import generate_one_vcard,generate_one_qrcode,handle_initdb,HRException
 
 def test_generate_vcard(): 
     data = generate_one_vcard('John','Bob','Junior Engineer','johnbob@example.com','55454616545')
@@ -27,3 +27,10 @@ def test_generate_qrcode():
     generated_qr = generate_one_qrcode(lname, fname, designation, email, phone)
 
     assert generated_qr == expected_qr_content
+
+
+def test_handle_initdb():
+        args = mock.Mock()
+        args.dbname = 'hr'
+
+
