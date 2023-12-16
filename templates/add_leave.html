@@ -1,14 +1,45 @@
-{% extends 'base.html' %}
-
-{% block content %}
-    <h1> Add leave for the employee </h1>
-    <form action="/employees" method="POST">
-        <label for="leave_date">Leave Date:</label>
-        <input type="date" id="leave_date" name="leave_date"><br><br>
-        
-        <label for="leave_reason">Reason:</label><br>
-        <textarea id="leave_reason" name="leave_reason" rows="4" cols="50"></textarea><br><br>
-
-        <input type="submit" value="Submit">
-    </form>
+{% extends 'base.html' %} {% block content %}
+<h1>No leave left for {{ user.fname }} {{ user.lname }}</h1>
+<h2>{{ user.title.title }}</h2>
+<table>
+  <tr>
+    <th>First name</th>
+    <td>{{ user.fname }}</td>
+  </tr>
+  <tr>
+    <th>Last name</th>
+    <td>{{ user.lname }}</td>
+  </tr>
+  <tr>
+    <th>Email</th>
+    <td>{{ user.email }}</td>
+  </tr>
+  <tr>
+    <th>Phone</th>
+    <td>{{ user.phone }}</td>
+  </tr>
+  <tr>
+    <th>Max leaves</th>
+    <td>{{ user.title.max_leaves }}</td>
+  </tr>
+  <tr>
+    <th>Leaves taken</th>
+    <td>{{ leave_taken }}</td>
+  </tr>
+</table>
+<div>
+  <a
+    href="{{ url_for('employees') }}"
+    style="
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+      font-size: 16px;
+      background-color: #f8f9fa;
+      padding: 8px 12px;
+      border-radius: 4px;
+    "
+    >Back to employees</a
+  >
+</div>
 {% endblock %}
