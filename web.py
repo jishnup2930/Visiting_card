@@ -1,7 +1,7 @@
 import db
 import flask
 from flask_cors import CORS
-
+from flask import request
 from flask import url_for, redirect
 from sqlalchemy.sql import func
 
@@ -50,47 +50,34 @@ def employee_details(empid):
 
 @app.route("/leave/<int:empid>", methods=["POST"])
 def add_leave(empid):
-    if flask.request.method == "POST":
-        leave_q = d.select(func.count(db.Leave.id)).where(db.Leave.employee_id == empid)
-        leaves_taken = d.session.execute(leave_q).scalar()
-        
-        query = d.select(db.Designation.max_leaves).where(db.Employee.id == empid)
-        max_leave = d.session.execute(query).scalar()
-        
-        if leaves_taken >= max_leave:
-            print('dwsxfszdsdfdddddddddd')
-            query = d.select(db.Employee).where(db.Employee.id == empid)
-            user = d.session.execute(query).scalar()
-            return flask.render_template("add_leave.html", user=user, leaves_taken=leaves_taken)
-            # return redirect(url_for("employees"))
+    try:
+        if request.method == "POST":
+            data = request.json
+            leave_date = data.get("leave_date")
+            leave_reason = data.get("leave_reason")
+            leave_q = d.select(func.count(db.Leave.id)).where(db.Leave.employee_id == empid)
+            leaves_taken = d.session.execute(leave_q).scalar()
+            
+            query = d.select(db.Designation.max_leaves).where(db.Employee.id == empid)
+            max_leave = d.session.execute(query).scalar()
+            
+            if leaves_taken >= max_leave:
+                return flask.jsonify({"Error:No leave left for this employee"}),400
+            else:
+                leave = db.Leave(date=leave_date, employee_id=empid, reason=leave_reason)
+                d.session.add(leave)
+                d.session.commit()
+                return flask.jsonify({"message": "Leave added successfully"}),200
 
-        else:
-            leave_date = flask.request.form.get("leave_date")
-            leave_reason = flask.request.form.get("leave_reason")
-            leave = db.Leave(date=leave_date, employee_id=empid, reason=leave_reason)
-            d.session.add(leave)
-            d.session.commit()
-            return redirect(url_for("employees"))
+    except Exception as e:
+        return flask.jsonify({"error": "An unexpected error occurred"}), 500
 
-# @app.route('/search')
-# def search():
-#     query = request.args.get('query', '').lower()
+@app.route("/leave/check/<int:empid>")
+def leave_count(empid):
+    query =d.select(db.Leave).where(db.Employee.id==empid)
+    leave_date=d.session.execute(query).scalar()
+    return flask.jsonify(leave_date)
     
-#     # Execute the query and fetch the users
-#     users = d.query(db.Employee).all()
-    
-#     filtered_users = [
-#         user for user in users 
-#         if query in user.fname.lower() or query in user.lname.lower()
-#     ]
-    
-#     # Create a list of dictionaries for JSON serialization
-#     filtered_user_dicts = [
-#         {'id': user.id, 'fname': user.fname, 'lname': user.lname}
-#         for user in filtered_users
-#     ]
-    
-#     return jsonify(filtered_user_dicts)
 
 @app.route("/about")
 def about():
