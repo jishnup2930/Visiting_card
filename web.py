@@ -72,11 +72,24 @@ def add_leave(empid):
     except Exception as e:
         return flask.jsonify({"error": "An unexpected error occurred"}), 500
 
-@app.route("/leave/check/<int:empid>")
-def leave_count(empid):
-    query =d.select(db.Leave).where(db.Employee.id==empid)
-    leave_date=d.session.execute(query).scalar()
-    return flask.jsonify(leave_date)
+@app.route("/vcard/<int:empid>")
+def generate_vcard(empid):
+    vcard_q =d.select(db.Employee).where(db.Employee.id==empid)
+    user=d.session.execute(vcard_q).scalar()
+    ret={"vcard":f"""
+            BEGIN:VCARD
+            VERSION:2.1
+            N:{user.lname};{user.fname}
+            FN:{user.fname} {user.lname}
+            ORG:Authors, Inc.
+            TITLE:{user.title.title}
+            TEL;WORK;VOICE:{user.phone}
+            ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
+            EMAIL;PREF;INTERNET:{user.email}
+            REV:20150922T195243Z
+            END:VCARD"""}
+
+    return flask.jsonify(ret)
     
 
 @app.route("/about")
