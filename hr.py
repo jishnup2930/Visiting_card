@@ -5,6 +5,7 @@ import os
 import sys
 from datetime import datetime
 
+
 import requests
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
